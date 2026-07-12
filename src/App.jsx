@@ -395,32 +395,30 @@ export default function App() {
           </ResizablePanel>
 
           {/* Right Pane: Design Panel (Customize Panel + Templates) */}
+          {rightPanelOpen && <ResizableHandle withHandle />}
           {rightPanelOpen && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={30} minSize={15} maxSize={60} className="flex flex-col border-l">
-                <div className="flex h-full flex-col bg-background select-none">
-                  <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/10">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Design Options</span>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 rounded hover:bg-secondary" onClick={() => setRightPanelOpen(false)}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <Tabs defaultValue="templates" className="flex min-h-0 flex-1 flex-col px-4 pt-3">
-                    <TabsList className="w-full h-8">
-                      <TabsTrigger value="templates" className="flex-1 text-xs py-1">Templates</TabsTrigger>
-                      <TabsTrigger value="styles" className="flex-1 text-xs py-1">Styles</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="templates" className="min-h-0 flex-1 overflow-y-auto pb-4 pt-1">
-                      <TemplateGallery />
-                    </TabsContent>
-                    <TabsContent value="styles" className="min-h-0 flex-1 overflow-y-auto pb-4 pt-1">
-                      <CustomizePanel />
-                    </TabsContent>
-                  </Tabs>
+            <ResizablePanel defaultSize={30} minSize={15} maxSize={60} className="flex flex-col border-l">
+              <div className="flex h-full flex-col bg-background select-none">
+                <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/10">
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Design Options</span>
+                  <Button variant="ghost" size="icon" className="h-5 w-5 rounded hover:bg-secondary" onClick={() => setRightPanelOpen(false)}>
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
-              </ResizablePanel>
-            </>
+                <Tabs defaultValue="templates" className="flex min-h-0 flex-1 flex-col px-4 pt-3">
+                  <TabsList className="w-full h-8">
+                    <TabsTrigger value="templates" className="flex-1 text-xs py-1">Templates</TabsTrigger>
+                    <TabsTrigger value="styles" className="flex-1 text-xs py-1">Styles</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="templates" className="min-h-0 flex-1 overflow-y-auto pb-4 pt-1">
+                    <TemplateGallery />
+                  </TabsContent>
+                  <TabsContent value="styles" className="min-h-0 flex-1 overflow-y-auto pb-4 pt-1">
+                    <CustomizePanel />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </ResizablePanel>
           )}
         </ResizablePanelGroup>
       </div>
