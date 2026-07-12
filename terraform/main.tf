@@ -9,11 +9,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "cybertechmind"
-    key            = "md-to-docs/terraform.tfstate"
-    region         = "auto"
-    use_lockfile   = true
-    lockfile_timeout = "60s"
+    bucket  = "cybertechmind"
+    key     = "md-to-docs/terraform.tfstate"
+    region  = "auto"
 
     endpoints = {
       s3 = "https://542c501fde6fbebe250b276846db8be8.r2.cloudflarestorage.com"
