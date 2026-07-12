@@ -196,6 +196,61 @@ export default function LandingPage({ onLaunchEditor }) {
     };
   }, []);
 
+  const [previewStyle, setPreviewStyle] = useState("boardroom");
+
+  const PREVIEW_STYLES = {
+    boardroom: {
+      name: "Boardroom Style",
+      desc: "Formal sans-serif with sky blue accents, ideal for professional business reports.",
+      font: "font-sans",
+      titleAlign: "text-left",
+      headerRule: true,
+      ruleColor: "bg-sky-500",
+      headingColor: "text-sky-500 font-bold",
+      textColor: "text-slate-300",
+      badgeColor: "bg-sky-500/10 text-sky-400 border border-sky-500/20",
+      bgColor: "bg-slate-900/60"
+    },
+    academic: {
+      name: "Academic Style",
+      desc: "Elegant serif with centered title headings, perfect for research papers and essays.",
+      font: "font-serif",
+      titleAlign: "text-center",
+      headerRule: false,
+      ruleColor: "bg-transparent",
+      headingColor: "text-white font-serif italic",
+      textColor: "text-slate-300",
+      badgeColor: "bg-white/10 text-slate-200 border border-white/20",
+      bgColor: "bg-[#111625]"
+    },
+    technical: {
+      name: "Technical Blueprint",
+      desc: "Monospace font layout with a clean green border, designed for developers and APIs.",
+      font: "font-mono",
+      titleAlign: "text-left",
+      headerRule: true,
+      ruleColor: "bg-teal-500",
+      headingColor: "text-teal-400 font-mono",
+      textColor: "text-slate-400",
+      badgeColor: "bg-teal-500/10 text-teal-400 border border-teal-500/20",
+      bgColor: "bg-[#080d16]"
+    },
+    warmSunset: {
+      name: "Warm Sunset",
+      desc: "Friendly sans-serif layout with warm orange accents, excellent for casual articles.",
+      font: "font-sans",
+      titleAlign: "text-left",
+      headerRule: true,
+      ruleColor: "bg-amber-500",
+      headingColor: "text-amber-400 font-semibold",
+      textColor: "text-slate-300",
+      badgeColor: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+      bgColor: "bg-[#1b1510]"
+    }
+  };
+
+  const currentPreview = PREVIEW_STYLES[previewStyle];
+
   return (
     <div className="relative min-h-screen bg-slate-950 text-white overflow-x-hidden font-sans selection:bg-sky-500/30 selection:text-sky-200">
       
@@ -229,8 +284,8 @@ export default function LandingPage({ onLaunchEditor }) {
 
         <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400 font-medium">
           <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#extension" className="hover:text-white transition-colors">VS Code Extension</a>
           <a href="#templates" className="hover:text-white transition-colors">Templates</a>
+          <a href="#extension" className="hover:text-white transition-colors">VS Code Extension</a>
           <a href="https://github.com/moovendhan-v" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
             GitHub <ExternalLink className="h-3 w-3" />
           </a>
@@ -344,6 +399,107 @@ export default function LandingPage({ onLaunchEditor }) {
               Provides dedicated print margins, forced page breaks, and scale controls to generate exact A4/Letter size PDF outputs cleanly.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* ── Interactive Document Style Toggler ── */}
+      <section id="templates" className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-slate-900">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          <div className="lg:col-span-5 text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-teal-500/10 text-teal-400 text-xs font-bold mb-4 uppercase tracking-wider">
+              <Paintbrush className="h-3.5 w-3.5" /> Curated Templates
+            </div>
+            <h2 className="text-3xl font-extrabold mb-6">
+              Switch designs <br />
+              with a single click.
+            </h2>
+            <p className="text-slate-400 text-base mb-8 leading-relaxed">
+              MD → Docs completely reformats your page outline, font sizing, headings, blockquotes, and lists in real-time. Pick the style that matches your audience.
+            </p>
+
+            {/* Template Option List */}
+            <div className="space-y-3">
+              {Object.entries(PREVIEW_STYLES).map(([key, item]) => (
+                <button
+                  key={key}
+                  onClick={() => setPreviewStyle(key)}
+                  className={`w-full text-left p-4 rounded-xl border transition-all duration-300 ${
+                    previewStyle === key
+                      ? "border-sky-500 bg-sky-950/20 text-white shadow-md shadow-sky-500/5"
+                      : "border-slate-900 bg-slate-950/20 text-slate-400 hover:border-slate-800"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-sm">{item.name}</span>
+                    {previewStyle === key && <span className="h-2 w-2 rounded-full bg-sky-500" />}
+                  </div>
+                  <p className="text-xs text-slate-500 leading-normal">{item.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Interactive Document Page Container */}
+          <div className="lg:col-span-7 flex justify-center">
+            <div className="w-full max-w-[460px] rounded-2xl border border-slate-900 bg-slate-950/60 p-6 shadow-2xl backdrop-blur-sm relative">
+              
+              {/* Paper element */}
+              <div className={`w-full transition-all duration-500 rounded-xl p-8 shadow-inner ${currentPreview.bgColor} ${currentPreview.font}`}>
+                
+                {/* Title */}
+                <h3 className={`text-xl font-extrabold text-white mb-2 ${currentPreview.titleAlign}`}>
+                  Project Specification
+                </h3>
+                
+                {/* Rule */}
+                {currentPreview.headerRule && (
+                  <div className={`h-[2px] w-full mb-6 ${currentPreview.ruleColor}`} />
+                )}
+                {!currentPreview.headerRule && <div className="h-4" />}
+
+                {/* Subtitle / Author details */}
+                <div className={`flex flex-wrap gap-2 mb-6 ${currentPreview.titleAlign === "text-center" ? "justify-center" : "justify-start"}`}>
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${currentPreview.badgeColor}`}>
+                    Author: Moovendhan
+                  </span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${currentPreview.badgeColor}`}>
+                    Date: July 2026
+                  </span>
+                </div>
+
+                {/* Heading 1 */}
+                <h4 className={`text-sm tracking-wide uppercase mb-3 ${currentPreview.headingColor}`}>
+                  1. Executive Summary
+                </h4>
+                
+                {/* Body paragraph text */}
+                <p className={`text-xs leading-relaxed mb-6 ${currentPreview.textColor}`}>
+                  This document specifies the structural blueprints and design templates compiled to convert raw Markdown nodes into native Word and PDF files cleanly.
+                </p>
+
+                {/* Heading 2 */}
+                <h4 className={`text-sm tracking-wide uppercase mb-3 ${currentPreview.headingColor}`}>
+                  2. Key Deliverables
+                </h4>
+
+                {/* List items */}
+                <div className={`space-y-2.5 text-xs ${currentPreview.textColor}`}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-teal-400 mt-0.5">•</span>
+                    <span>100% client-side conversion logic</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-teal-400 mt-0.5">•</span>
+                    <span>Synchronized offline VS Code extension VSIX</span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
         </div>
       </section>
 
