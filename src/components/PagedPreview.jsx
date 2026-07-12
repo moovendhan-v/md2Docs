@@ -100,7 +100,7 @@ export default function PagedPreview({ html }) {
   const containerHeight = geom.height * pages.length * zoom + (pages.length - 1) * 24 * zoom + 80;
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col bg-canvas transition-colors">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-canvas transition-colors">
       {/* Zoom controls floating widget - positioned relative to viewport panel */}
       <div className="absolute bottom-6 right-6 z-50 flex items-center gap-1 rounded-lg border bg-background/95 p-1 shadow-md backdrop-blur-sm">
         <Button
