@@ -14,9 +14,12 @@ function wrapFlags(html, r) {
 }
 
 function inlineHtml(runs, st) {
+  if (runs.length === 1 && runs[0].text === "") {
+    return "&nbsp;";
+  }
   return runs
     .map((r) => {
-      const text = esc(r.text);
+      const text = esc(r.text).replace(/\n/g, "<br/>");
       switch (r.t) {
         case "code":
           return wrapFlags(
@@ -68,7 +71,7 @@ export function blockToHtml(block, st) {
     case "heading":
       return `<h${block.level} id="${block.id}" style="${headingStyle(block, st)}">${inlineHtml(block.inline, st)}</h${block.level}>`;
     case "hr":
-      return `<hr style="border:none;border-top:1px solid ${st.table.borderColor};margin:14pt 0;" />`;
+      return `<hr class="page-break" style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`;
     case "code": {
       const size = codeFontSize(block.text, st.page.fontSize - 1);
       return `<pre style="background:${st.code.bg};color:${st.code.color};padding:10pt;border-radius:4px;font-family:Consolas,'Courier New',monospace;font-size:${size}pt;line-height:1.45;white-space:pre;overflow:hidden;margin:8pt 0;">${esc(block.text)}</pre>`;

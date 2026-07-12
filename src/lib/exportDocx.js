@@ -8,7 +8,7 @@
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   WidthType, BorderStyle, AlignmentType, ExternalHyperlink, InternalHyperlink,
-  Bookmark, LevelFormat,
+  Bookmark, LevelFormat, Footer, PageNumber, PageBreak,
 } from "docx";
 import { codeFontSize } from "./parser";
 
@@ -27,21 +27,33 @@ function runs(inline, st, opts = {}) {
       bold: opts.bold || r.bold,
       italics: opts.italics || r.italic,
     };
+    const textParts = r.text.split("\n");
     switch (r.t) {
       case "code":
-        out.push(new TextRun({ ...common, text: r.text, font: "Consolas", shading: { fill: hex(st.code.bg) }, color: hex(st.code.color) }));
+        textParts.forEach((part, idx) => {
+          if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
+          out.push(new TextRun({ ...common, text: part, font: "Consolas", shading: { fill: hex(st.code.bg) }, color: hex(st.code.color) }));
+        });
         break;
       case "link": {
-        const child = new TextRun({ ...common, text: r.text, color: hex(st.link.color), underline: {} });
-        if (r.href.startsWith("#")) {
-          out.push(new InternalHyperlink({ anchor: r.href.slice(1), children: [child] }));
-        } else {
-          out.push(new ExternalHyperlink({ link: r.href, children: [child] }));
-        }
+        textParts.forEach((part, idx) => {
+          if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
+          const child = new TextRun({ ...common, text: part, color: hex(st.link.color), underline: {} });
+          if (r.href.startsWith("#")) {
+            out.push(new InternalHyperlink({ anchor: r.href.slice(1), children: [child] }));
+          } else {
+            out.push(new ExternalHyperlink({ link: r.href, children: [child] }));
+          }
+        });
         break;
       }
       default:
-        out.push(new TextRun({ ...common, text: r.text }));
+        textParts.forEach((part, idx) => {
+          if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
+          if (part !== "" || textParts.length === 1) {
+            out.push(new TextRun({ ...common, text: part }));
+          }
+        });
     }
   }
   return out;
@@ -188,8 +200,7 @@ export async function exportDocx(blocks, st, fileName) {
       }
       case "hr":
         children.push(new Paragraph({
-          spacing: { before: 160, after: 160 },
-          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: hex(st.table.borderColor), space: 1 } },
+          pageBreakBefore: true,
           children: [],
         }));
         break;
@@ -204,6 +215,41 @@ export async function exportDocx(blocks, st, fileName) {
     sections: [{
       properties: {
         page: { margin: { top: 2 * CM, bottom: 2 * CM, left: 2.2 * CM, right: 2.2 * CM } },
+      },
+      footers: {
+        default: new Footer({
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({
+                  text: "Page ",
+                  font: bodyFont,
+                  size: half(9),
+                  color: "888888",
+                }),
+                new TextRun({
+                  children: [PageNumber.CURRENT],
+                  font: bodyFont,
+                  size: half(9),
+                  color: "888888",
+                }),
+                new TextRun({
+                  text: " of ",
+                  font: bodyFont,
+                  size: half(9),
+                  color: "888888",
+                }),
+                new TextRun({
+                  children: [PageNumber.TOTAL_PAGES],
+                  font: bodyFont,
+                  size: half(9),
+                  color: "888888",
+                }),
+              ],
+            }),
+          ],
+        }),
       },
       children,
     }],

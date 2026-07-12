@@ -48,10 +48,20 @@ export function parseMarkdown(md) {
   let i = 0;
   let firstH1 = true;
 
+  let lastWasEmpty = false;
+
   while (i < lines.length) {
     const line = lines[i];
 
-    if (line.trim() === "") { i++; continue; }
+    if (line.trim() === "") {
+      if (lastWasEmpty) {
+        blocks.push({ type: "paragraph", inline: [{ t: "text", text: "" }] });
+      }
+      lastWasEmpty = true;
+      i++;
+      continue;
+    }
+    lastWasEmpty = false;
 
     // fenced code block
     if (line.trim().startsWith("```")) {
@@ -148,7 +158,7 @@ export function parseMarkdown(md) {
       !LIST_RE.test(lines[i]) &&
       !lines[i].includes("|")
     ) { buf.push(lines[i]); i++; }
-    blocks.push({ type: "paragraph", inline: parseInline(buf.join(" ")) });
+    blocks.push({ type: "paragraph", inline: parseInline(buf.join("\n")) });
   }
 
   return blocks;

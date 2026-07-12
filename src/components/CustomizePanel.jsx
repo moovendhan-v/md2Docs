@@ -10,11 +10,17 @@ import {
 import { RotateCcw } from "lucide-react";
 
 export const FONT_OPTIONS = [
-  { label: "Arial (sans)", value: "Arial, Helvetica, sans-serif" },
+  { label: "Arial (sans-serif)", value: "Arial, Helvetica, sans-serif" },
   { label: "Georgia (serif)", value: "Georgia, 'Times New Roman', serif" },
-  { label: "Segoe UI (sans)", value: "'Segoe UI', Verdana, sans-serif" },
-  { label: "Times New Roman", value: "'Times New Roman', Times, serif" },
-  { label: "Courier (mono)", value: "'Courier New', Courier, monospace" },
+  { label: "Segoe UI (sans-serif)", value: "'Segoe UI', Verdana, sans-serif" },
+  { label: "Times New Roman (serif)", value: "'Times New Roman', Times, serif" },
+  { label: "Courier New (monospace)", value: "'Courier New', Courier, monospace" },
+  { label: "Calibri (sans-serif)", value: "Calibri, Candara, sans-serif" },
+  { label: "Garamond (serif)", value: "Garamond, 'EB Garamond', serif" },
+  { label: "Century Gothic (sans-serif)", value: "'Century Gothic', sans-serif" },
+  { label: "Baskerville (serif)", value: "Baskerville, Georgia, serif" },
+  { label: "Palatino (serif)", value: "'Palatino Linotype', Palatino, serif" },
+  { label: "Trebuchet MS (sans-serif)", value: "'Trebuchet MS', sans-serif" },
 ];
 
 function ColorField({ label, value, onChange }) {
@@ -88,7 +94,9 @@ export default function CustomizePanel() {
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {FONT_OPTIONS.map((f) => (
-                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                    <SelectItem key={f.value} value={f.value}>
+                      <span style={{ fontFamily: f.value }}>{f.label}</span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
