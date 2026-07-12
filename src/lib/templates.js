@@ -403,32 +403,38 @@ export const TEMPLATES = {
   },
 };
 
-export const DEFAULT_MD = `# Moovendhan | Software Engineer & Cloud Architect
+export const DEFAULT_MD = `# Moovendhan | Backend & DevOps Engineer
 
 ![Profile Photo](https://assets.cybertechmind.com/images/moovendhan_banner.png)
 
-Highly motivated **Software Engineer** specializing in full-stack web development and cloud-native infrastructure automation. Expert at translating product ideas into production-ready architectures, with extensive experience in React/Next.js frontends, Node.js services, and AWS/Cloudflare deployments.
+Highly motivated **Backend & DevOps Engineer** with 2+ years of experience building scalable APIs, microservices, and cloud-native AWS infrastructure in production environments. Proficient in designing resilient, secure, and cost-optimized cloud architectures.
 
-## Technical Stack & Skills
+## Professional Summary
 
-- **Front-End Development**: React, Next.js, Vite, TailwindCSS, State Management (Zustand, Redux)
-- **Back-End & API Design**: Node.js, Express, REST APIs, Reverse Proxies (Nginx)
-- **DevOps & Infrastructure**: Infrastructure as Code (Terraform), AWS (ECS, ALB, Route53, IAM), Cloudflare Pages
-- **Developer Workflows**: CI/CD (GitHub Actions), Docker, Git, Command-line automation
+- **Backend & API Systems**: 2+ years building Python/Node.js APIs, microservices, and event-driven architectures using AWS SQS/SNS and Redis caching.
+- **Full-Cycle DevOps**: Docker containerization, CI/CD automation (GitHub Actions, Bitbucket Pipelines, CodePipeline), IaC (CloudFormation, AWS SAM), and ECS Fargate deployments.
+- **Cloud Architecture**: AWS Certified Solutions Architect – Associate (SAA-C03); strong foundation in designing resilient, cost-optimized, and secure cloud environments.
 
-## 📈 Key Metrics & Accomplishments
+## Certification
 
-| Highlight | Description | Impact |
-|---|---|---|
-| Cloud Migrations | Orchestrated ECS-based modular AWS architectures | 100% infrastructure reproducibility |
-| Build Optimization | Rebuilt asset bundles and optimized Vite assets | Reduced load times by 38% |
-| CI/CD Pipelines | Deployed environment-separated Git deployment branches | Automated dev → prod releases |
+- **AWS Certified Solutions Architect – Associate (SAA-C03)**
+  *Amazon Web Services, 2025*
+  Validated expertise in designing resilient, secure, high-performing, and cost-optimized AWS architectures.
 
-> "Strive not to be a success, but rather to be of value." — Albert Einstein
+## Technical Skills
+
+- **Programming Languages**: Python, JavaScript/TypeScript (ES6+), Bash Scripting
+- **Backend & APIs**: FastAPI, Flask, Express.js, RESTful APIs, GraphQL, Microservices, Serverless, Event-Driven Architecture, SQLAlchemy, Sequelize, Prisma
+- **Databases & Caching**: PostgreSQL, MySQL, MongoDB, Redis, Query Optimization, Indexing, Database Design
+- **AWS Services**: Lambda, ECS Fargate, EC2, RDS, S3, CloudFront, API Gateway, SQS, SNS, Cognito, CloudWatch, CloudFormation, SAM, Secrets Manager, Route53, VPC, ALB, Auto Scaling, ECR, ACM
+- **DevOps & CI/CD**: Docker, Docker Compose, GitHub Actions, Bitbucket Pipelines, AWS CodePipeline, CodeBuild, CodeDeploy, OIDC Auth, Blue-Green Deployments
+- **Security & IaC**: CloudFormation, AWS SAM, IAM Roles & Policies, OWASP Standards, OAuth/OIDC, Secrets Management, VPC Isolation, Vulnerability Scanning
+- **Developer Tools**: Git, Jira, Pytest, Postman, Docker Hub, ECR, Technical Documentation, Agile/Scrum
 
 ### Contact & Links
 - **GitHub**: [github.com/moovendhan-v](https://github.com/moovendhan-v)
 - **Website**: [moovendhan.dev](https://github.com/moovendhan-v)
 
 *Generated dynamically using MD → Docs.*
+* md2docs.cybertechmind.com
 `;
