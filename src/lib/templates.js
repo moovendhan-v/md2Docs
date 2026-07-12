@@ -409,16 +409,12 @@ export const DEFAULT_MD = `# Moovendhan | Software Engineer & Cloud Architect
 
 Highly motivated **Software Engineer** specializing in full-stack web development and cloud-native infrastructure automation. Expert at translating product ideas into production-ready architectures, with extensive experience in React/Next.js frontends, Node.js services, and AWS/Cloudflare deployments.
 
----
-
 ## 🛠️ Technical Stack & Skills
 
 - **Front-End Development**: React, Next.js, Vite, TailwindCSS, State Management (Zustand, Redux)
 - **Back-End & API Design**: Node.js, Express, REST APIs, Reverse Proxies (Nginx)
 - **DevOps & Infrastructure**: Infrastructure as Code (Terraform), AWS (ECS, ALB, Route53, IAM), Cloudflare Pages
 - **Developer Workflows**: CI/CD (GitHub Actions), Docker, Git, Command-line automation
-
----
 
 ## 🚀 Key Projects
 
@@ -434,8 +430,6 @@ Highly motivated **Software Engineer** specializing in full-stack web developmen
 - Configured secure CORS handling and performance optimized cache profiles.
 - **Technologies**: Docker Compose, Nginx, Linux.
 
----
-
 ## 📈 Key Metrics & Accomplishments
 
 | Highlight | Description | Impact |
@@ -443,8 +437,6 @@ Highly motivated **Software Engineer** specializing in full-stack web developmen
 | Cloud Migrations | Orchestrated ECS-based modular AWS architectures | 100% infrastructure reproducibility |
 | Build Optimization | Rebuilt asset bundles and optimized Vite assets | Reduced load times by 38% |
 | CI/CD Pipelines | Deployed environment-separated Git deployment branches | Automated dev → prod releases |
-
----
 
 > "Strive not to be a success, but rather to be of value." — Albert Einstein
 
