@@ -9,9 +9,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket  = "cybertechmind"
-    key     = "md-to-docs/terraform.tfstate"
-    region  = "auto"
+    bucket = "md-to-docs"
+    key    = "frontend/terraform.tfstate"
+    region = "auto"
 
     endpoints = {
       s3 = "https://542c501fde6fbebe250b276846db8be8.r2.cloudflarestorage.com"
@@ -65,11 +65,31 @@ resource "cloudflare_pages_domain" "custom" {
   name         = var.custom_domain
 }
 
+# Production CNAME: md2docs.cybertechmind.com → md-to-docs.pages.dev
 resource "cloudflare_dns_record" "pages_cname" {
   count   = var.custom_domain != "" && var.cloudflare_zone_id != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = var.custom_domain_record_name
   content = "${cloudflare_pages_project.md_to_docs.name}.pages.dev"
+  type    = "CNAME"
+  proxied = true
+  ttl     = 1
+}
+
+# Dev branch custom domain (e.g. dev.md2docs.cybertechmind.com)
+resource "cloudflare_pages_domain" "dev" {
+  count        = var.dev_domain != "" ? 1 : 0
+  account_id   = var.cloudflare_account_id
+  project_name = cloudflare_pages_project.md_to_docs.name
+  name         = var.dev_domain
+}
+
+# Dev CNAME: dev.md2docs.cybertechmind.com → dev.<project>.pages.dev
+resource "cloudflare_dns_record" "pages_cname_dev" {
+  count   = var.dev_domain != "" && var.cloudflare_zone_id != "" ? 1 : 0
+  zone_id = var.cloudflare_zone_id
+  name    = var.dev_domain_record_name
+  content = "dev.${cloudflare_pages_project.md_to_docs.name}.pages.dev"
   type    = "CNAME"
   proxied = true
   ttl     = 1
