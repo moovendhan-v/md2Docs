@@ -5,6 +5,7 @@ import {
   Layers, Zap, Cpu, Sparkles, Terminal, Code2, ShieldAlert
 } from "lucide-react";
 import { Button } from "./ui/button";
+import InteractiveReveal from "./InteractiveReveal";
 
 export default function LandingPage({ onLaunchEditor }) {
   const containerRef = useRef(null);
@@ -27,84 +28,8 @@ export default function LandingPage({ onLaunchEditor }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.current.appendChild(renderer.domElement);
 
-    // Create a group to hold the entire document assembly
-    const documentGroup = new THREE.Group();
-    documentGroup.rotation.y = -0.3; // Default angle to show 3D depth
-    documentGroup.rotation.x = 0.2;
-
-    // 1. The document base sheet (semi-transparent glassmorphic plate)
-    const sheetGeom = new THREE.PlaneGeometry(8, 11);
-    const sheetMat = new THREE.MeshBasicMaterial({
-      color: 0x0a0f1d, // Deep dark slate background
-      transparent: true,
-      opacity: 0.85,
-      side: THREE.DoubleSide
-    });
-    const sheet = new THREE.Mesh(sheetGeom, sheetMat);
-    documentGroup.add(sheet);
-
-    // 2. The document border outline (neon teal/blue)
-    const outlineGeom = new THREE.EdgesGeometry(sheetGeom);
-    const outlineMat = new THREE.LineBasicMaterial({
-      color: 0x0ea5e9, // Tailwind sky-500
-    });
-    const outline = new THREE.LineSegments(outlineGeom, outlineMat);
-    documentGroup.add(outline);
-
-    // 3. Add horizontal "text line" strips onto the sheet (offset slightly forward to prevent z-fighting)
-    // Title Line at top (Thick Teal strip)
-    const titleGeom = new THREE.PlaneGeometry(5, 0.4);
-    const titleMat = new THREE.MeshBasicMaterial({ color: 0x14b8a6, transparent: true, opacity: 0.95 });
-    const titleMesh = new THREE.Mesh(titleGeom, titleMat);
-    titleMesh.position.set(-0.8, 4.0, 0.02);
-    documentGroup.add(titleMesh);
-
-    // Horizontal text lines configuration
-    const lineParams = [
-      { y: 3.0, w: 6.0, x: 0 },
-      { y: 2.4, w: 5.5, x: -0.25 },
-      { y: 1.8, w: 4.2, x: -0.9 },
-      // Section Heading (Teal strip)
-      { y: 0.6, w: 3.0, x: -1.5, color: 0x14b8a6, h: 0.3 },
-      // Body lines
-      { y: -0.1, w: 6.0, x: 0 },
-      { y: -0.7, w: 5.8, x: -0.1 },
-      { y: -1.3, w: 6.0, x: 0 },
-      { y: -1.9, w: 3.5, x: -1.25 },
-      // Section Heading 2
-      { y: -2.9, w: 3.2, x: -1.4, color: 0x14b8a6, h: 0.3 },
-      // List items (offset with bullets)
-      { y: -3.6, w: 4.5, x: -0.5, list: true },
-      { y: -4.2, w: 4.8, x: -0.35, list: true },
-      { y: -4.8, w: 4.2, x: -0.65, list: true },
-    ];
-
-    const meshArray = [];
-    lineParams.forEach((p, idx) => {
-      const geom = new THREE.PlaneGeometry(p.w, p.h || 0.15);
-      const mat = new THREE.MeshBasicMaterial({
-        color: p.color || 0x0ea5e9,
-        transparent: true,
-        opacity: 0.65
-      });
-      const lineMesh = new THREE.Mesh(geom, mat);
-      lineMesh.position.set(p.x + (p.list ? 0.35 : 0), p.y, 0.02);
-      documentGroup.add(lineMesh);
-      meshArray.push(lineMesh);
-
-      if (p.list) {
-        const bulletGeom = new THREE.BoxGeometry(0.12, 0.12, 0.02);
-        const bulletMat = new THREE.MeshBasicMaterial({ color: 0x14b8a6 });
-        const bulletMesh = new THREE.Mesh(bulletGeom, bulletMat);
-        bulletMesh.position.set(p.x - p.w / 2 + 0.1, p.y, 0.02);
-        documentGroup.add(bulletMesh);
-      }
-    });
-
-    scene.add(documentGroup);
-
-    // Add subtle ambient particles orbiting the document
-    const particleCount = 140;
+    // Add subtle ambient particles orbiting in space
+    const particleCount = 180;
     const particleGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
@@ -122,7 +47,7 @@ export default function LandingPage({ onLaunchEditor }) {
     const particles = new THREE.Points(particleGeometry, particleMaterial);
     scene.add(particles);
 
-    // Track mouse movement to rotate object
+    // Track mouse movement to rotate particles
     let mouseX = 0;
     let mouseY = 0;
     let targetX = 0;
@@ -146,20 +71,8 @@ export default function LandingPage({ onLaunchEditor }) {
       targetX += (mouseX - targetX) * 0.05;
       targetY += (mouseY - targetY) * 0.05;
 
-      documentGroup.rotation.y = -0.3 + targetX * 0.4;
-      documentGroup.rotation.x = 0.2 + targetY * 0.4;
-
-      // Float effect: slow up/down wave
-      const time = Date.now() * 0.001;
-      documentGroup.position.y = Math.sin(time * 0.8) * 0.3;
-
-      // Pulse code/text line opacity slightly to make it feel alive
-      meshArray.forEach((mesh, idx) => {
-        mesh.material.opacity = 0.5 + Math.sin(time * 2 + idx) * 0.15;
-      });
-
-      particles.rotation.y += 0.0006;
-      particles.rotation.x += 0.0002;
+      particles.rotation.y += 0.0006 + targetX * 0.005;
+      particles.rotation.x += 0.0002 + targetY * 0.005;
 
       renderer.render(scene, camera);
     };
@@ -185,12 +98,6 @@ export default function LandingPage({ onLaunchEditor }) {
       if (containerRef.current) {
         containerRef.current.removeChild(renderer.domElement);
       }
-      sheetGeom.dispose();
-      sheetMat.dispose();
-      outlineGeom.dispose();
-      outlineMat.dispose();
-      titleGeom.dispose();
-      titleMat.dispose();
       particleGeometry.dispose();
       particleMaterial.dispose();
     };
@@ -352,6 +259,11 @@ export default function LandingPage({ onLaunchEditor }) {
             <span className="flex items-center gap-1.5"><Cpu className="h-4 w-4 text-teal-500" /> Real .docx Generation</span>
           </div>
 
+        </div>
+
+        {/* Right Column: Interactive Dashboard Reveal */}
+        <div className="md:col-span-5 flex justify-center items-center z-10 w-full">
+          <InteractiveReveal />
         </div>
       </section>
 
