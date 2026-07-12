@@ -54,3 +54,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Prevent react-resizable-panels outer wrappers from blocking flexbox shrinking */
+[data-panel] {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
