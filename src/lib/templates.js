@@ -405,7 +405,7 @@ export const TEMPLATES = {
 
 export const DEFAULT_MD = `# Moovendhan | Backend & DevOps Engineer
 
-![Profile Photo](https://assets.cybertechmind.com/images/moovendhan_banner.png)
+![Profile Photo](https://github.com/user-attachments/assets/cd49f32c-6d44-418e-b7de-f26b5b78b55c)
 
 Highly motivated **Backend & DevOps Engineer** with 2+ years of experience building scalable APIs, microservices, and cloud-native AWS infrastructure in production environments. Proficient in designing resilient, secure, and cost-optimized cloud architectures.
 
