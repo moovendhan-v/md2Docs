@@ -338,7 +338,7 @@ export default function App() {
         </div>
 
         {/* MIDDLE — Document Preview (always fills remaining space) */}
-        <div className="flex flex-1 min-w-0 min-h-0 overflow-hidden">
+        <div className="flex flex-1 min-w-0 min-h-0 overflow-hidden" style={{ width: "100%", height: "100%" }}>
           <PagedPreview html={html} />
         </div>
 

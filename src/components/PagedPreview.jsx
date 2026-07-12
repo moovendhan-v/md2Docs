@@ -100,7 +100,7 @@ export default function PagedPreview({ html }) {
   const containerHeight = geom.height * pages.length * zoom + (pages.length - 1) * 24 * zoom + 80;
 
   return (
-    <div style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%", minHeight: 0, minWidth: 0, overflow: "hidden" }} className="bg-canvas transition-colors">
+    <div style={{ position: "relative", display: "flex", flexDirection: "column", width: "100%", height: "100%", minHeight: 0, minWidth: 0, overflow: "hidden" }} className="bg-canvas transition-colors">
       {/* Zoom controls floating widget - positioned relative to viewport panel */}
       <div className="absolute bottom-6 right-6 z-50 flex items-center gap-1 rounded-lg border bg-background/95 p-1 shadow-md backdrop-blur-sm">
         <Button
@@ -140,15 +140,15 @@ export default function PagedPreview({ html }) {
       </div>
 
       {/* Scrollable pages list container */}
-      <div ref={wrapperRef} style={{ flex: 1, overflow: "auto", minHeight: 0, minWidth: 0 }} className="p-8">
+      <div ref={wrapperRef} style={{ flex: 1, overflow: "auto", minHeight: 0, minWidth: 0, display: "flex", justifyContent: "center", alignItems: "flex-start" }} className="p-8">
         <div
-          className="mx-auto min-w-0 w-full"
           style={{
             height: `${containerHeight}px`,
+            flexShrink: 0,
           }}
         >
           <div
-            className="flex flex-col items-center gap-6 mx-auto"
+            className="flex flex-col items-center gap-6"
             style={{
               transform: `scale(${zoom})`,
               transformOrigin: "top center",
