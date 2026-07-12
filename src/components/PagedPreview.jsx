@@ -100,8 +100,8 @@ export default function PagedPreview({ html }) {
   const containerHeight = geom.height * pages.length * zoom + (pages.length - 1) * 24 * zoom + 80;
 
   return (
-    <div ref={wrapperRef} className="relative flex-1 overflow-y-auto bg-canvas p-8 transition-colors">
-      {/* Zoom controls floating widget */}
+    <div className="relative flex min-h-0 flex-1 flex-col bg-canvas transition-colors">
+      {/* Zoom controls floating widget - positioned relative to viewport panel */}
       <div className="absolute bottom-6 right-6 z-50 flex items-center gap-1 rounded-lg border bg-background/95 p-1 shadow-md backdrop-blur-sm">
         <Button
           variant="ghost"
@@ -139,40 +139,43 @@ export default function PagedPreview({ html }) {
           dangerouslySetInnerHTML={{ __html: html }} />
       </div>
 
-      <div
-        className="mx-auto flex justify-center"
-        style={{
-          height: `${containerHeight}px`,
-          width: "100%",
-        }}
-      >
+      {/* Scrollable pages list container */}
+      <div ref={wrapperRef} className="flex-1 overflow-y-auto p-8">
         <div
-          className="flex flex-col items-center gap-6"
+          className="mx-auto flex justify-center"
           style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: "top center",
-            width: `${geom.width}px`,
-            height: `${geom.height * pages.length + (pages.length - 1) * 24}px`,
+            height: `${containerHeight}px`,
+            width: "100%",
           }}
         >
-          {pages.map((pageHtml, i) => (
-            <div key={i} className="relative">
-              <div
-                className="page-content-wrapper shadow-[0_10px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/10"
-                style={{
-                  width: geom.width, height: geom.height,
-                  padding: `${geom.marginY}px ${geom.marginX}px`,
-                  boxSizing: "border-box", overflow: "hidden",
-                  background: styles.page.bg || "#ffffff",
-                }}
-              >
-                <div style={styleObj(baseStyle(styles))} dangerouslySetInnerHTML={{ __html: pageHtml }} />
+          <div
+            className="flex flex-col items-center gap-6"
+            style={{
+              transform: `scale(${zoom})`,
+              transformOrigin: "top center",
+              width: `${geom.width}px`,
+              height: `${geom.height * pages.length + (pages.length - 1) * 24}px`,
+            }}
+          >
+            {pages.map((pageHtml, i) => (
+              <div key={i} className="relative">
+                <div
+                  className="page-content-wrapper shadow-[0_10px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/10"
+                  style={{
+                    width: geom.width, height: geom.height,
+                    padding: `${geom.marginY}px ${geom.marginX}px`,
+                    boxSizing: "border-box", overflow: "hidden",
+                    background: styles.page.bg || "#ffffff",
+                  }}
+                >
+                  <div style={styleObj(baseStyle(styles))} dangerouslySetInnerHTML={{ __html: pageHtml }} />
+                </div>
+                <div className="mt-1.5 text-center text-[11px] tracking-widest text-muted-foreground">
+                  PAGE {i + 1} / {pages.length}
+                </div>
               </div>
-              <div className="mt-1.5 text-center text-[11px] tracking-widest text-muted-foreground">
-                PAGE {i + 1} / {pages.length}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

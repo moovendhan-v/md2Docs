@@ -5,17 +5,22 @@ import { parseMarkdown } from "@/lib/parser";
 import { blocksToHtml } from "@/lib/renderHtml";
 import { exportDocx } from "@/lib/exportDocx";
 import PagedPreview from "@/components/PagedPreview";
-import StylesDrawer from "@/components/StylesDrawer";
 import PdfDialog from "@/components/PdfDialog";
 import TemplatesDialog from "@/components/TemplatesDialog";
+import TemplateGallery from "@/components/TemplateGallery";
+import CustomizePanel from "@/components/CustomizePanel";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  ResizablePanelGroup, ResizablePanel, ResizableHandle
+} from "@/components/ui/resizable";
+import {
   FileText, Upload, Download, FileType2, Paintbrush, Type, Sun, Moon, FileUp,
-  Bold, Italic, Code, Link2, Table2, Quote, Split, Info, Undo, Redo, LayoutGrid,
+  Bold, Italic, Code, Link2, Table2, Quote, Split, Info, Undo, Redo, LayoutGrid, X
 } from "lucide-react";
 
 export default function App() {
@@ -29,9 +34,9 @@ export default function App() {
   const dark = useDocStore((s) => s.dark);
   const setDark = useDocStore((s) => s.setDark);
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef(null);
   const dragDepth = useRef(0);
@@ -268,7 +273,12 @@ export default function App() {
 
           <div className="h-5 w-px bg-border mx-1" />
 
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs border-dashed hover:border-primary/50" onClick={() => setDrawerOpen(true)}>
+          <Button
+            variant={rightPanelOpen ? "secondary" : "outline"}
+            size="sm"
+            className="h-8 gap-1.5 text-xs border-dashed hover:border-primary/50"
+            onClick={() => setRightPanelOpen(!rightPanelOpen)}
+          >
             <Paintbrush className="h-3.5 w-3.5 text-primary" /> Design
           </Button>
 
@@ -288,95 +298,133 @@ export default function App() {
         </div>
       </header>
 
-      {/* Workspace: editor + paged preview */}
+      {/* Workspace: 3-pane resizable layout */}
       <div className="flex min-h-0 flex-1">
-        <div className="flex w-[34%] min-w-[320px] flex-col border-r bg-background">
-          <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/10">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Markdown Source</span>
-            <span className="text-[10px] text-muted-foreground/80">drag & drop to import</span>
-          </div>
+        <ResizablePanelGroup direction="horizontal" className="h-full w-full">
+          {/* Left Pane: Markdown Source */}
+          <ResizablePanel defaultSize={30} minSize={15} maxSize={60} className="flex flex-col">
+            <div className="flex h-full flex-col bg-background">
+              <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/10">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Markdown Source</span>
+                <span className="text-[10px] text-muted-foreground/80">drag & drop to import</span>
+              </div>
 
-          {/* Editor Toolbar */}
-          <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/20 px-2 py-1 select-none">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded hover:bg-secondary/80 disabled:opacity-30"
-              onClick={handleUndo}
-              disabled={!canUndo}
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded hover:bg-secondary/80 disabled:opacity-30"
-              onClick={handleRedo}
-              disabled={!canRedo}
-              title="Redo (Ctrl+Y / Ctrl+Shift+Z)"
-            >
-              <Redo className="h-3.5 w-3.5" />
-            </Button>
+              {/* Editor Toolbar */}
+              <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/20 px-2 py-1 select-none">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded hover:bg-secondary/80 disabled:opacity-30"
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  title="Undo (Ctrl+Z)"
+                >
+                  <Undo className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded hover:bg-secondary/80 disabled:opacity-30"
+                  onClick={handleRedo}
+                  disabled={!canRedo}
+                  title="Redo (Ctrl+Y / Ctrl+Shift+Z)"
+                >
+                  <Redo className="h-3.5 w-3.5" />
+                </Button>
 
-            <div className="h-4 w-px bg-border mx-1.5" />
+                <div className="h-4 w-px bg-border mx-1.5" />
 
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("bold")} title="Bold">
-              <Bold className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("italic")} title="Italic">
-              <Italic className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("code")} title="Code inline">
-              <Code className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("codeblock")} title="Code block">
-              <span className="text-[10px] font-extrabold font-mono">{"{}"}</span>
-            </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("bold")} title="Bold">
+                  <Bold className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("italic")} title="Italic">
+                  <Italic className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("code")} title="Code inline">
+                  <Code className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("codeblock")} title="Code block">
+                  <span className="text-[10px] font-extrabold font-mono">{"{}"}</span>
+                </Button>
 
-            <div className="h-4 w-px bg-border mx-1" />
+                <div className="h-4 w-px bg-border mx-1" />
 
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("link")} title="Link">
-              <Link2 className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("table")} title="Table">
-              <Table2 className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("quote")} title="Blockquote">
-              <Quote className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80 text-primary" onClick={() => insertMarkdown("hr")} title="Page break (---)">
-              <Split className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("link")} title="Link">
+                  <Link2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("table")} title="Table">
+                  <Table2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("quote")} title="Blockquote">
+                  <Quote className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80 text-primary" onClick={() => insertMarkdown("hr")} title="Page break (---)">
+                  <Split className="h-3.5 w-3.5" />
+                </Button>
+              </div>
 
-          <Textarea
-            id="md-textarea"
-            value={markdown}
-            onChange={(e) => setMarkdown(e.target.value)}
-            onKeyDown={handleKeyDown}
-            spellCheck={false}
-            className="flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-[13px] leading-relaxed focus-visible:ring-0 placeholder:text-muted-foreground/50 focus:outline-none"
-            placeholder="# Paste your markdown here…"
-          />
+              <Textarea
+                id="md-textarea"
+                value={markdown}
+                onChange={(e) => setMarkdown(e.target.value)}
+                onKeyDown={handleKeyDown}
+                spellCheck={false}
+                className="flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-[13px] leading-relaxed focus-visible:ring-0 placeholder:text-muted-foreground/50 focus:outline-none"
+                placeholder="# Paste your markdown here…"
+              />
 
-          {/* Stats footer */}
-          <div className="flex items-center justify-between border-t bg-muted/20 px-3 py-1.5 text-[10px] text-muted-foreground/80 font-medium select-none">
-            <span className="flex items-center gap-1">
-              <Info className="h-3 w-3 text-muted-foreground" />
-              {stats.minRead} min read
-            </span>
-            <div className="flex gap-3">
-              <span>{stats.words} words</span>
-              <span>{stats.chars} chars</span>
+              {/* Stats footer */}
+              <div className="flex items-center justify-between border-t bg-muted/20 px-3 py-1.5 text-[10px] text-muted-foreground/80 font-medium select-none">
+                <span className="flex items-center gap-1">
+                  <Info className="h-3 w-3 text-muted-foreground" />
+                  {stats.minRead} min read
+                </span>
+                <div className="flex gap-3">
+                  <span>{stats.words} words</span>
+                  <span>{stats.chars} chars</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </ResizablePanel>
 
-        <PagedPreview html={html} />
+          <ResizableHandle withHandle />
+
+          {/* Middle Pane: Paged Preview */}
+          <ResizablePanel defaultSize={rightPanelOpen ? 40 : 70} minSize={20} className="flex flex-col">
+            <PagedPreview html={html} />
+          </ResizablePanel>
+
+          {/* Right Pane: Design Panel (Customize Panel + Templates) */}
+          {rightPanelOpen && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={30} minSize={15} maxSize={60} className="flex flex-col border-l">
+                <div className="flex h-full flex-col bg-background select-none">
+                  <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/10">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Design Options</span>
+                    <Button variant="ghost" size="icon" className="h-5 w-5 rounded hover:bg-secondary" onClick={() => setRightPanelOpen(false)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Tabs defaultValue="templates" className="flex min-h-0 flex-1 flex-col px-4 pt-3">
+                    <TabsList className="w-full h-8">
+                      <TabsTrigger value="templates" className="flex-1 text-xs py-1">Templates</TabsTrigger>
+                      <TabsTrigger value="styles" className="flex-1 text-xs py-1">Styles</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="templates" className="min-h-0 flex-1 overflow-y-auto pb-4 pt-1">
+                      <TemplateGallery />
+                    </TabsContent>
+                    <TabsContent value="styles" className="min-h-0 flex-1 overflow-y-auto pb-4 pt-1">
+                      <CustomizePanel />
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
       </div>
 
-      <StylesDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
       <PdfDialog open={pdfOpen} onOpenChange={setPdfOpen} />
       <TemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
     </div>
