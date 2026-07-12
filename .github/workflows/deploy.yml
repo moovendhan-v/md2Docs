@@ -13,6 +13,10 @@ concurrency:
   group: deploy-${{ github.ref_name }}
   cancel-in-progress: true   # OK to cancel superseded deploys
 
+permissions:
+  contents: read
+  deployments: write
+
 jobs:
   deploy:
     name: Deploy (${{ github.ref_name }})
