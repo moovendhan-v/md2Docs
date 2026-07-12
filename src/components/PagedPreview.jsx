@@ -140,9 +140,9 @@ export default function PagedPreview({ html }) {
       </div>
 
       {/* Scrollable pages list container */}
-      <div ref={wrapperRef} className="flex-1 overflow-y-auto p-8">
+      <div ref={wrapperRef} className="flex-1 overflow-auto p-8 min-w-0">
         <div
-          className="mx-auto flex justify-center"
+          className="mx-auto flex justify-center overflow-x-auto"
           style={{
             height: `${containerHeight}px`,
             width: "100%",
@@ -153,7 +153,7 @@ export default function PagedPreview({ html }) {
             style={{
               transform: `scale(${zoom})`,
               transformOrigin: "top center",
-              width: `${geom.width}px`,
+              minWidth: `${geom.width}px`,
               height: `${geom.height * pages.length + (pages.length - 1) * 24}px`,
             }}
           >
