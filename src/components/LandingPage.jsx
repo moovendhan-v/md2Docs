@@ -20,52 +20,104 @@ export default function LandingPage({ onLaunchEditor }) {
     // Create scene, camera, renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.z = 25;
+    camera.position.z = 22;
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.current.appendChild(renderer.domElement);
 
-    // Create a beautiful morphing grid sphere / document geometry
-    const geometry = new THREE.IcosahedronGeometry(7, 2);
-    // Wireframe material with neon teal glow
-    const material = new THREE.MeshBasicMaterial({
+    // Create a group to hold the entire document assembly
+    const documentGroup = new THREE.Group();
+    documentGroup.rotation.y = -0.3; // Default angle to show 3D depth
+    documentGroup.rotation.x = 0.2;
+
+    // 1. The document base sheet (semi-transparent glassmorphic plate)
+    const sheetGeom = new THREE.PlaneGeometry(8, 11);
+    const sheetMat = new THREE.MeshBasicMaterial({
+      color: 0x0a0f1d, // Deep dark slate background
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide
+    });
+    const sheet = new THREE.Mesh(sheetGeom, sheetMat);
+    documentGroup.add(sheet);
+
+    // 2. The document border outline (neon teal/blue)
+    const outlineGeom = new THREE.EdgesGeometry(sheetGeom);
+    const outlineMat = new THREE.LineBasicMaterial({
       color: 0x0ea5e9, // Tailwind sky-500
-      wireframe: true,
-      transparent: true,
-      opacity: 0.35,
+    });
+    const outline = new THREE.LineSegments(outlineGeom, outlineMat);
+    documentGroup.add(outline);
+
+    // 3. Add horizontal "text line" strips onto the sheet (offset slightly forward to prevent z-fighting)
+    // Title Line at top (Thick Teal strip)
+    const titleGeom = new THREE.PlaneGeometry(5, 0.4);
+    const titleMat = new THREE.MeshBasicMaterial({ color: 0x14b8a6, transparent: true, opacity: 0.95 });
+    const titleMesh = new THREE.Mesh(titleGeom, titleMat);
+    titleMesh.position.set(-0.8, 4.0, 0.02);
+    documentGroup.add(titleMesh);
+
+    // Horizontal text lines configuration
+    const lineParams = [
+      { y: 3.0, w: 6.0, x: 0 },
+      { y: 2.4, w: 5.5, x: -0.25 },
+      { y: 1.8, w: 4.2, x: -0.9 },
+      // Section Heading (Teal strip)
+      { y: 0.6, w: 3.0, x: -1.5, color: 0x14b8a6, h: 0.3 },
+      // Body lines
+      { y: -0.1, w: 6.0, x: 0 },
+      { y: -0.7, w: 5.8, x: -0.1 },
+      { y: -1.3, w: 6.0, x: 0 },
+      { y: -1.9, w: 3.5, x: -1.25 },
+      // Section Heading 2
+      { y: -2.9, w: 3.2, x: -1.4, color: 0x14b8a6, h: 0.3 },
+      // List items (offset with bullets)
+      { y: -3.6, w: 4.5, x: -0.5, list: true },
+      { y: -4.2, w: 4.8, x: -0.35, list: true },
+      { y: -4.8, w: 4.2, x: -0.65, list: true },
+    ];
+
+    const meshArray = [];
+    lineParams.forEach((p, idx) => {
+      const geom = new THREE.PlaneGeometry(p.w, p.h || 0.15);
+      const mat = new THREE.MeshBasicMaterial({
+        color: p.color || 0x0ea5e9,
+        transparent: true,
+        opacity: 0.65
+      });
+      const lineMesh = new THREE.Mesh(geom, mat);
+      lineMesh.position.set(p.x + (p.list ? 0.35 : 0), p.y, 0.02);
+      documentGroup.add(lineMesh);
+      meshArray.push(lineMesh);
+
+      if (p.list) {
+        const bulletGeom = new THREE.BoxGeometry(0.12, 0.12, 0.02);
+        const bulletMat = new THREE.MeshBasicMaterial({ color: 0x14b8a6 });
+        const bulletMesh = new THREE.Mesh(bulletGeom, bulletMat);
+        bulletMesh.position.set(p.x - p.w / 2 + 0.1, p.y, 0.02);
+        documentGroup.add(bulletMesh);
+      }
     });
 
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+    scene.add(documentGroup);
 
-    // Add a secondary inner glowing core
-    const coreGeom = new THREE.IcosahedronGeometry(3, 1);
-    const coreMat = new THREE.MeshBasicMaterial({
-      color: 0x14b8a6, // Tailwind teal-500
-      wireframe: true,
-      transparent: true,
-      opacity: 0.5,
-    });
-    const coreMesh = new THREE.Mesh(coreGeom, coreMat);
-    scene.add(coreMesh);
-
-    // Add subtle ambient particles
-    const particleCount = 120;
+    // Add subtle ambient particles orbiting the document
+    const particleCount = 140;
     const particleGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
-      positions[i] = (Math.random() - 0.5) * 40;
-      positions[i + 1] = (Math.random() - 0.5) * 40;
-      positions[i + 2] = (Math.random() - 0.5) * 40;
+      positions[i] = (Math.random() - 0.5) * 35;
+      positions[i + 1] = (Math.random() - 0.5) * 35;
+      positions[i + 2] = (Math.random() - 0.5) * 35;
     }
     particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const particleMaterial = new THREE.PointsMaterial({
       color: 0x38bdf8,
       size: 0.12,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.5,
     });
     const particles = new THREE.Points(particleGeometry, particleMaterial);
     scene.add(particles);
@@ -79,8 +131,8 @@ export default function LandingPage({ onLaunchEditor }) {
     const handleMouseMove = (event) => {
       const windowHalfX = window.innerWidth / 2;
       const windowHalfY = window.innerHeight / 2;
-      mouseX = (event.clientX - windowHalfX) / 100;
-      mouseY = (event.clientY - windowHalfY) / 100;
+      mouseX = (event.clientX - windowHalfX) / 150;
+      mouseY = (event.clientY - windowHalfY) / 150;
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -94,20 +146,20 @@ export default function LandingPage({ onLaunchEditor }) {
       targetX += (mouseX - targetX) * 0.05;
       targetY += (mouseY - targetY) * 0.05;
 
-      mesh.rotation.y += 0.003;
-      mesh.rotation.x += 0.002;
-      mesh.rotation.y += targetX * 0.05;
-      mesh.rotation.x += targetY * 0.05;
+      documentGroup.rotation.y = -0.3 + targetX * 0.4;
+      documentGroup.rotation.x = 0.2 + targetY * 0.4;
 
-      coreMesh.rotation.y -= 0.005;
-      coreMesh.rotation.x -= 0.003;
-
-      // Make it pulse slightly
+      // Float effect: slow up/down wave
       const time = Date.now() * 0.001;
-      const scale = 1 + Math.sin(time) * 0.05;
-      mesh.scale.set(scale, scale, scale);
+      documentGroup.position.y = Math.sin(time * 0.8) * 0.3;
 
-      particles.rotation.y += 0.0005;
+      // Pulse code/text line opacity slightly to make it feel alive
+      meshArray.forEach((mesh, idx) => {
+        mesh.material.opacity = 0.5 + Math.sin(time * 2 + idx) * 0.15;
+      });
+
+      particles.rotation.y += 0.0006;
+      particles.rotation.x += 0.0002;
 
       renderer.render(scene, camera);
     };
@@ -133,10 +185,12 @@ export default function LandingPage({ onLaunchEditor }) {
       if (containerRef.current) {
         containerRef.current.removeChild(renderer.domElement);
       }
-      geometry.dispose();
-      material.dispose();
-      coreGeom.dispose();
-      coreMat.dispose();
+      sheetGeom.dispose();
+      sheetMat.dispose();
+      outlineGeom.dispose();
+      outlineMat.dispose();
+      titleGeom.dispose();
+      titleMat.dispose();
       particleGeometry.dispose();
       particleMaterial.dispose();
     };

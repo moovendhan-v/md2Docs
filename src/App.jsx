@@ -33,7 +33,9 @@ export default function App() {
   const dark = useDocStore((s) => s.dark);
   const setDark = useDocStore((s) => s.setDark);
 
-  const [view, setView] = useState("landing");
+  const [view, setView] = useState(() => {
+    return window.location.pathname === "/dashboard" ? "editor" : "landing";
+  });
   const [pdfOpen, setPdfOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [leftOpen, setLeftOpen] = useState(true);
@@ -41,6 +43,23 @@ export default function App() {
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef(null);
   const dragDepth = useRef(0);
+
+  // Popstate navigation syncing
+  useEffect(() => {
+    const handlePopState = () => {
+      setView(window.location.pathname === "/dashboard" ? "editor" : "landing");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = (newView) => {
+    setView(newView);
+    const path = newView === "editor" ? "/dashboard" : "/";
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, "", path);
+    }
+  };
 
   // Custom Undo/Redo state
   const [canUndo, setCanUndo] = useState(false);
@@ -177,7 +196,7 @@ export default function App() {
   };
 
   if (view === "landing") {
-    return <LandingPage onLaunchEditor={() => setView("editor")} />;
+    return <LandingPage onLaunchEditor={() => navigateTo("editor")} />;
   }
 
   return (
@@ -200,7 +219,7 @@ export default function App() {
         {/* Logo */}
         <div
           className="flex items-center gap-1.5 cursor-pointer hover:bg-secondary/60 p-1.5 rounded-lg transition-colors select-none group"
-          onClick={() => setView("landing")}
+          onClick={() => navigateTo("landing")}
           title="Return to landing page"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
