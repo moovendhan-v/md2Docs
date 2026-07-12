@@ -263,7 +263,7 @@ export default function LandingPage({ onLaunchEditor }) {
 
         {/* Right Column: Interactive Dashboard Reveal */}
         <div className="md:col-span-5 flex justify-center items-center z-10 w-full">
-          <InteractiveReveal />
+          <InteractiveReveal onLaunchEditor={onLaunchEditor} />
         </div>
       </section>
 
