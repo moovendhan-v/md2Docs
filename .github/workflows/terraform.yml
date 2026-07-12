@@ -3,8 +3,7 @@ name: Terraform — Deploy to Cloudflare Pages
 on:
   push:
     branches:
-      - main      # → terraform apply  (infra deploy)
-      - dev       # → terraform plan   (validate only, no infra changes)
+      - main   # → terraform apply (infra changes only)
     paths:
       - "terraform/**"
   pull_request:

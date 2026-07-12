@@ -1,0 +1,67 @@
+name: Deploy — Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main   # → production deployment  (md2docs.cybertechmind.com)
+      - dev    # → preview deployment     (dev.md2docs.cybertechmind.com)
+    paths-ignore:
+      - "terraform/**"   # Terraform changes don't need an app rebuild
+      - "*.md"
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true   # OK to cancel superseded deploys
+
+jobs:
+  deploy:
+    name: Deploy (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Node ────────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # ── 3. Install dependencies ──────────────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Build ─────────────────────────────────────────────────────────────
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+          VITE_APP_ENV: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+
+      # ── 5. Deploy to Cloudflare Pages ────────────────────────────────────────
+      # main  branch → production deployment (branch arg omitted = production)
+      # dev   branch → preview  deployment  (branch = dev)
+      - name: Deploy to Cloudflare Pages (production)
+        if: github.ref_name == 'main'
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: md-to-docs
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}  # posts deployment status back to GitHub
+
+      - name: Deploy to Cloudflare Pages (preview — dev branch)
+        if: github.ref_name == 'dev'
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: md-to-docs
+          directory: dist
+          branch: dev                               # maps to preview URL
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
