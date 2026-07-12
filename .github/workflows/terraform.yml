@@ -72,9 +72,9 @@ jobs:
 
           node_version = "20"
 
-          custom_domain             = ""
-          cloudflare_zone_id        = ""
-          custom_domain_record_name = "@"
+          custom_domain             = "md2docs.cybertechmind.com"
+          custom_domain_record_name = "md2docs"
+          cloudflare_zone_id        = "${{ secrets.CLOUDFLARE_ZONE_ID }}"
           EOF
 
       # ── 4. terraform init ────────────────────────────────────────────────────
