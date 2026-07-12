@@ -1,0 +1,82 @@
+{
+  "name": "md-to-docs",
+  "displayName": "MD → Docs",
+  "description": "Convert Markdown files to Word (.docx) and PDF with professional templates. Preview rendered output directly in VS Code.",
+  "version": "0.1.0",
+  "publisher": "moovendhan",
+  "icon": "icon.png",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other", "Formatters"],
+  "keywords": ["markdown", "docx", "word", "pdf", "export", "convert"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "md-to-docs.exportDocx",
+        "title": "MD → Docs: Save as Word (.docx)",
+        "icon": "$(file-text)"
+      },
+      {
+        "command": "md-to-docs.exportPdf",
+        "title": "MD → Docs: Save as PDF",
+        "icon": "$(file-pdf)"
+      },
+      {
+        "command": "md-to-docs.preview",
+        "title": "MD → Docs: Open Preview",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "md-to-docs.preview",
+          "when": "resourceExtname == .md",
+          "group": "navigation@1"
+        },
+        {
+          "command": "md-to-docs.exportDocx",
+          "when": "resourceExtname == .md",
+          "group": "navigation@2"
+        },
+        {
+          "command": "md-to-docs.exportPdf",
+          "when": "resourceExtname == .md",
+          "group": "navigation@3"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "md-to-docs.exportDocx",
+          "when": "resourceExtname == .md",
+          "group": "md-to-docs@1"
+        },
+        {
+          "command": "md-to-docs.exportPdf",
+          "when": "resourceExtname == .md",
+          "group": "md-to-docs@2"
+        },
+        {
+          "command": "md-to-docs.preview",
+          "when": "resourceExtname == .md",
+          "group": "md-to-docs@3"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "package": "npm run build && vsce package",
+    "vscode:prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {
+    "docx": "^8.5.0"
+  }
+}
