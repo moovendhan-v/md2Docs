@@ -3,9 +3,15 @@
 
    Inline runs are flat with formatting flags, so nesting like
    **`git pull` fails** (code inside bold) parses correctly:
-   { t:"code", text:"git pull", bold:true }, { t:"text", text:" fails", bold:true } */
+   { t:"code", text:"git pull", bold:true }, { t:"text", text:" fails", bold:true }
 
-const INLINE_RE = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)|(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))/g;
+   Raw HTML blocks (lines starting with < that contain block-level tags) are
+   passed through verbatim so GitHub-flavored HTML like <div align="center">,
+   <img ...>, <table> etc. render correctly in the preview. */
+
+// Matches: ![alt](src){style} or ![alt](src) — image with optional {style attrs}
+// Also matches: [![alt](src)](href) — linked image (badge pattern)
+const INLINE_RE = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)|(!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\))|(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))/g;
 
 export function parseInline(text, flags = {}) {
   const runs = [];
@@ -14,11 +20,15 @@ export function parseInline(text, flags = {}) {
   let m;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) runs.push({ t: "text", text: text.slice(last, m.index), ...flags });
-    if (m[1]) runs.push(...parseInline(m[2], { ...flags, bold: true }));
-    else if (m[3]) runs.push(...parseInline(m[4], { ...flags, italic: true }));
-    else if (m[5]) runs.push({ t: "code", text: m[6], ...flags });
-    else if (m[7]) runs.push({ t: "image", text: m[8], src: m[9], ...flags });
-    else if (m[10]) runs.push({ t: "link", text: m[11], href: m[12], ...flags });
+    if (m[1])       runs.push(...parseInline(m[2], { ...flags, bold: true }));
+    else if (m[3])  runs.push(...parseInline(m[4], { ...flags, italic: true }));
+    else if (m[5])  runs.push({ t: "code", text: m[6], ...flags });
+    // [![alt](imgSrc)](href)  — badge / linked image
+    else if (m[7])  runs.push({ t: "linked-image", text: m[8], src: m[9], href: m[10], ...flags });
+    // ![alt](src)
+    else if (m[11]) runs.push({ t: "image", text: m[12], src: m[13], ...flags });
+    // [text](href)
+    else if (m[14]) runs.push({ t: "link", text: m[15], href: m[16], ...flags });
     last = re.lastIndex;
   }
   if (last < text.length) runs.push({ t: "text", text: text.slice(last), ...flags });
@@ -42,13 +52,15 @@ function slugify(text, used) {
 
 const LIST_RE = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
 
+// HTML block-level tags that should be passed through verbatim
+const BLOCK_HTML_RE = /^<(div|img|table|thead|tbody|tr|td|th|section|article|header|footer|figure|figcaption|details|summary|br|hr|p|ul|ol|li|blockquote|pre|h[1-6]|sub|sup)[\s>\/]/i;
+
 export function parseMarkdown(md) {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
   const blocks = [];
   const slugs = new Set();
   let i = 0;
   let firstH1 = true;
-
   let lastWasEmpty = false;
 
   while (i < lines.length) {
@@ -63,6 +75,26 @@ export function parseMarkdown(md) {
       continue;
     }
     lastWasEmpty = false;
+
+    // ── raw HTML block ──────────────────────────────────────────────────────
+    // Collect consecutive lines that are part of an HTML block.
+    // We detect: opening <tag or </tag at the start of the trimmed line.
+    const trimmed = line.trim();
+    if (trimmed.startsWith("<") && (BLOCK_HTML_RE.test(trimmed) || trimmed.startsWith("</"))) {
+      const htmlLines = [];
+      // Collect until we hit a blank line OR a non-HTML line (like a heading)
+      while (
+        i < lines.length &&
+        lines[i].trim() !== "" &&
+        !/^#{1,6}\s/.test(lines[i]) &&
+        !lines[i].trim().startsWith("```")
+      ) {
+        htmlLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: "html", raw: htmlLines.join("\n") });
+      continue;
+    }
 
     // fenced code block
     if (line.trim().startsWith("```")) {
@@ -121,8 +153,7 @@ export function parseMarkdown(md) {
       continue;
     }
 
-    // lists — one nesting level, and the literal start number is preserved
-    // so "3. …" after an interruption keeps numbering instead of restarting at 1
+    // lists
     const lm = line.match(LIST_RE);
     if (lm) {
       const ordered = /\d/.test(lm[2]);
@@ -134,7 +165,6 @@ export function parseMarkdown(md) {
         const indent = m2[1].length;
         const isOrdered = /\d/.test(m2[2]);
         if (indent >= 2 && items.length > 0) {
-          // nested list under the previous item
           const parent = items[items.length - 1];
           if (!parent.children) {
             parent.children = { ordered: isOrdered, start: isOrdered ? parseInt(m2[2], 10) || 1 : 1, items: [] };
@@ -157,7 +187,8 @@ export function parseMarkdown(md) {
       lines[i].trim() !== "" &&
       !/^(#{1,6}\s|>|```)/.test(lines[i]) &&
       !LIST_RE.test(lines[i]) &&
-      !lines[i].includes("|")
+      !lines[i].includes("|") &&
+      !lines[i].trim().startsWith("<")
     ) { buf.push(lines[i]); i++; }
     blocks.push({ type: "paragraph", inline: parseInline(buf.join("\n")) });
   }

@@ -19,7 +19,7 @@ function inlineHtml(runs, st) {
   }
   return runs
     .map((r) => {
-      const text = esc(r.text).replace(/\n/g, "<br/>");
+      const text = esc(r.text || "").replace(/\n/g, "<br/>");
       switch (r.t) {
         case "code":
           return wrapFlags(
@@ -27,7 +27,9 @@ function inlineHtml(runs, st) {
         case "link":
           return wrapFlags(`<a href="${esc(r.href)}" style="color:${st.link.color};">${text}</a>`, r);
         case "image":
-          return wrapFlags(`<img src="${esc(r.src)}" alt="${esc(r.text)}" style="display:block;margin:12pt 0;max-width:100%;max-height:200px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);" />`, r);
+          return wrapFlags(`<img src="${esc(r.src)}" alt="${esc(r.text || "")}" style="display:block;margin:12pt auto;max-width:100%;max-height:220px;border-radius:8px;object-fit:contain;" />`, r);
+        case "linked-image":
+          return wrapFlags(`<a href="${esc(r.href)}" style="display:inline-block;"><img src="${esc(r.src)}" alt="${esc(r.text || "")}" style="height:28px;margin:2px;vertical-align:middle;" /></a>`, r);
         default:
           return wrapFlags(text, r);
       }
@@ -101,6 +103,9 @@ export function blockToHtml(block, st) {
         .join("");
       return `<table style="border-collapse:collapse;width:100%;margin:10pt 0;${baseStyle(st)}"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
     }
+    case "html":
+      // Raw HTML block — pass through verbatim (supports <div align>, <img>, <table>, badges, etc.)
+      return `<div style="margin:8pt 0;">${block.raw}</div>`;
     case "list":
       return listHtml(block, st);
     default:
