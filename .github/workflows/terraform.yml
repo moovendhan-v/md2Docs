@@ -3,7 +3,8 @@ name: Terraform — Deploy to Cloudflare Pages
 on:
   push:
     branches:
-      - main
+      - main      # → terraform apply  (infra deploy)
+      - dev       # → terraform plan   (validate only, no infra changes)
     paths:
       - "terraform/**"
   pull_request:
@@ -24,14 +25,20 @@ on:
           - destroy
 
 concurrency:
-  group: terraform-deploy
-  cancel-in-progress: false # never cancel mid-apply
+  group: terraform-${{ github.ref_name }}   # separate lock per branch
+  cancel-in-progress: false                 # never cancel mid-apply
 
 jobs:
   terraform:
-    name: Terraform ${{ github.event.inputs.action || (github.event_name == 'pull_request' && 'plan') || 'apply' }}
+    name: >-
+      Terraform
+      ${{ github.event.inputs.action
+          || (github.event_name == 'pull_request' && 'plan')
+          || (github.ref_name == 'dev' && 'plan (dev branch)')
+          || 'apply' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
 
     env:
       # Terraform's S3 backend reads these exact env var names (AWS SDK naming)
