@@ -54,3 +54,15 @@ variable "cloudflare_zone_id" {
   type        = string
   default     = ""
 }
+
+variable "dev_domain" {
+  description = "Full custom domain for the dev branch (e.g. dev.md2docs.cybertechmind.com). Leave empty to skip."
+  type        = string
+  default     = ""
+}
+
+variable "dev_domain_record_name" {
+  description = "DNS subdomain label for the dev domain (e.g. \"dev.md2docs\" for dev.md2docs.cybertechmind.com)."
+  type        = string
+  default     = ""
+}

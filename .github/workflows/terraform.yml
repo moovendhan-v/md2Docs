@@ -3,7 +3,7 @@ name: Terraform — Deploy to Cloudflare Pages
 on:
   push:
     branches:
-      - main
+      - main   # → terraform apply (infra changes only)
     paths:
       - "terraform/**"
   pull_request:
@@ -24,14 +24,20 @@ on:
           - destroy
 
 concurrency:
-  group: terraform-deploy
-  cancel-in-progress: false # never cancel mid-apply
+  group: terraform-${{ github.ref_name }}   # separate lock per branch
+  cancel-in-progress: false                 # never cancel mid-apply
 
 jobs:
   terraform:
-    name: Terraform ${{ github.event.inputs.action || (github.event_name == 'pull_request' && 'plan') || 'apply' }}
+    name: >-
+      Terraform
+      ${{ github.event.inputs.action
+          || (github.event_name == 'pull_request' && 'plan')
+          || (github.ref_name == 'dev' && 'plan (dev branch)')
+          || 'apply' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
 
     env:
       # Terraform's S3 backend reads these exact env var names (AWS SDK naming)
@@ -75,6 +81,9 @@ jobs:
           custom_domain             = "md2docs.cybertechmind.com"
           custom_domain_record_name = "md2docs"
           cloudflare_zone_id        = "${{ secrets.CLOUDFLARE_ZONE_ID }}"
+
+          dev_domain             = "dev.md2docs.cybertechmind.com"
+          dev_domain_record_name = "dev.md2docs"
           EOF
 
       # ── 4. terraform init ────────────────────────────────────────────────────

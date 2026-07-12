@@ -4,8 +4,13 @@ output "pages_project_name" {
 }
 
 output "pages_subdomain" {
-  description = "Auto-generated Pages URL (always available)"
+  description = "Auto-generated production Pages URL"
   value       = "${cloudflare_pages_project.md_to_docs.name}.pages.dev"
+}
+
+output "dev_pages_subdomain" {
+  description = "Auto-generated dev branch Pages URL (branch preview)"
+  value       = "dev.${cloudflare_pages_project.md_to_docs.name}.pages.dev"
 }
 
 output "production_url" {
@@ -13,9 +18,14 @@ output "production_url" {
   value       = var.custom_domain != "" ? "https://${var.custom_domain}" : "https://${cloudflare_pages_project.md_to_docs.name}.pages.dev"
 }
 
+output "dev_url" {
+  description = "Dev branch URL (custom domain if set, otherwise branch Pages URL)"
+  value       = var.dev_domain != "" ? "https://${var.dev_domain}" : "https://dev.${cloudflare_pages_project.md_to_docs.name}.pages.dev"
+}
+
 output "custom_domain" {
-  description = "Attached custom domain (empty if not configured)"
-  value = var.custom_domain != "" ? one(cloudflare_pages_domain.custom[*].name) : "not configured"
+  description = "Attached production custom domain"
+  value       = var.custom_domain != "" ? one(cloudflare_pages_domain.custom[*].name) : "not configured"
 }
 
 output "project_id" {
