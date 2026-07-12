@@ -9,6 +9,7 @@ import PdfDialog from "@/components/PdfDialog";
 import TemplatesDialog from "@/components/TemplatesDialog";
 import TemplateGallery from "@/components/TemplateGallery";
 import CustomizePanel from "@/components/CustomizePanel";
+import LandingPage from "@/components/LandingPage";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -32,6 +33,7 @@ export default function App() {
   const dark = useDocStore((s) => s.dark);
   const setDark = useDocStore((s) => s.setDark);
 
+  const [view, setView] = useState("landing");
   const [pdfOpen, setPdfOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [leftOpen, setLeftOpen] = useState(true);
@@ -174,6 +176,10 @@ export default function App() {
     else setTemplate(val);
   };
 
+  if (view === "landing") {
+    return <LandingPage onLaunchEditor={() => setView("editor")} />;
+  }
+
   return (
     <div
       className="relative flex h-screen flex-col bg-background text-foreground transition-colors overflow-hidden"
@@ -194,15 +200,15 @@ export default function App() {
         {/* Logo */}
         <div
           className="flex items-center gap-1.5 cursor-pointer hover:bg-secondary/60 p-1.5 rounded-lg transition-colors select-none group"
-          onClick={() => setTemplatesOpen(true)}
-          title="Browse visual templates library"
+          onClick={() => setView("landing")}
+          title="Return to landing page"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
             <FileText className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold tracking-tight">MD → Docs</span>
           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">
-            Templates
+            Home
           </span>
         </div>
 
