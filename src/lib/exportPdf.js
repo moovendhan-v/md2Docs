@@ -23,7 +23,7 @@ export async function renderPdf(pages, styles) {
       pageEl.innerHTML = `<div style="${baseStyle(styles)}">${pages[i]}</div>`;
       host.appendChild(pageEl);
 
-      const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: "#ffffff", logging: false });
+      const canvas = await html2canvas(pageEl, { scale: 2, backgroundColor: "#ffffff", logging: false, useCORS: true });
       const img = canvas.toDataURL("image/jpeg", 0.95);
       if (i > 0) pdf.addPage();
       pdf.addImage(img, "JPEG", 0, 0, pw, ph);

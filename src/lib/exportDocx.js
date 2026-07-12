@@ -47,6 +47,9 @@ function runs(inline, st, opts = {}) {
         });
         break;
       }
+      case "image":
+        out.push(new TextRun({ ...common, text: `[Image: ${r.text || "Photo"}]`, color: "888888", italics: true }));
+        break;
       default:
         textParts.forEach((part, idx) => {
           if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));

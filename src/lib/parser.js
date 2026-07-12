@@ -5,7 +5,7 @@
    **`git pull` fails** (code inside bold) parses correctly:
    { t:"code", text:"git pull", bold:true }, { t:"text", text:" fails", bold:true } */
 
-const INLINE_RE = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)|(\[([^\]]+)\]\(([^)]+)\))/g;
+const INLINE_RE = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)|(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))/g;
 
 export function parseInline(text, flags = {}) {
   const runs = [];
@@ -17,7 +17,8 @@ export function parseInline(text, flags = {}) {
     if (m[1]) runs.push(...parseInline(m[2], { ...flags, bold: true }));
     else if (m[3]) runs.push(...parseInline(m[4], { ...flags, italic: true }));
     else if (m[5]) runs.push({ t: "code", text: m[6], ...flags });
-    else if (m[7]) runs.push({ t: "link", text: m[8], href: m[9], ...flags });
+    else if (m[7]) runs.push({ t: "image", text: m[8], src: m[9], ...flags });
+    else if (m[10]) runs.push({ t: "link", text: m[11], href: m[12], ...flags });
     last = re.lastIndex;
   }
   if (last < text.length) runs.push({ t: "text", text: text.slice(last), ...flags });

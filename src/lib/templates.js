@@ -405,30 +405,16 @@ export const TEMPLATES = {
 
 export const DEFAULT_MD = `# Moovendhan | Software Engineer & Cloud Architect
 
-![Profile Photo](https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250&h=250)
+![Profile Photo](https://assets.cybertechmind.com/images/moovendhan_banner.png)
 
 Highly motivated **Software Engineer** specializing in full-stack web development and cloud-native infrastructure automation. Expert at translating product ideas into production-ready architectures, with extensive experience in React/Next.js frontends, Node.js services, and AWS/Cloudflare deployments.
 
-## 🛠️ Technical Stack & Skills
+## Technical Stack & Skills
 
 - **Front-End Development**: React, Next.js, Vite, TailwindCSS, State Management (Zustand, Redux)
 - **Back-End & API Design**: Node.js, Express, REST APIs, Reverse Proxies (Nginx)
 - **DevOps & Infrastructure**: Infrastructure as Code (Terraform), AWS (ECS, ALB, Route53, IAM), Cloudflare Pages
 - **Developer Workflows**: CI/CD (GitHub Actions), Docker, Git, Command-line automation
-
-## 🚀 Key Projects
-
-### 📝 MD → Docs (Markdown Document Generator)
-*A high-fidelity markdown-to-document converter with custom styling systems.*
-- Implemented real-time Canva-style visual template selection and multi-column previews.
-- Engineered dynamic margins (A4 standard) and soft-break pagination rules for PDF/Word exports.
-- **Technologies**: React, Zustand, Radix UI, docx.js, TailwindCSS.
-
-### 🌐 Secure Nominatim Proxy Setup
-*Enterprise reverse-proxy reverse geolocation services.*
-- Architected Nginx reverse-proxies isolating core Nominatim geolocation engines.
-- Configured secure CORS handling and performance optimized cache profiles.
-- **Technologies**: Docker Compose, Nginx, Linux.
 
 ## 📈 Key Metrics & Accomplishments
 

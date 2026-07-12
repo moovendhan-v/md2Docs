@@ -26,6 +26,8 @@ function inlineHtml(runs, st) {
             `<code style="background:${st.code.bg};color:${st.code.color};padding:1px 5px;border-radius:3px;font-family:Consolas,'Courier New',monospace;font-size:0.9em;">${text}</code>`, r);
         case "link":
           return wrapFlags(`<a href="${esc(r.href)}" style="color:${st.link.color};">${text}</a>`, r);
+        case "image":
+          return wrapFlags(`<img src="${esc(r.src)}" alt="${esc(r.text)}" style="display:block;margin:12pt 0;max-width:100%;max-height:200px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);" />`, r);
         default:
           return wrapFlags(text, r);
       }
