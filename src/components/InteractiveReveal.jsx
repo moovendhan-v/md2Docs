@@ -26,7 +26,7 @@ export default function InteractiveReveal() {
     });
   };
 
-  const circleRadius = isHovering ? 130 : 80;
+  const circleRadius = isHovering ? 185 : 105;
 
   return (
     <div
@@ -34,10 +34,10 @@ export default function InteractiveReveal() {
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
-      className="relative w-full aspect-[16/10] max-w-[550px] rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl overflow-hidden cursor-crosshair group select-none"
+      className="relative w-full aspect-[16/10] max-w-[550px] rounded-2xl border border-slate-800 bg-slate-950/80 shadow-2xl overflow-hidden cursor-crosshair transition-all duration-500 ease-out hover:scale-[1.03] hover:border-slate-700/80 group select-none"
     >
       {/* ── Background Layer: The Skeleton Blueprint ── */}
-      <div className="absolute inset-0 p-6 flex flex-col justify-between bg-slate-950">
+      <div className="absolute inset-0 p-6 flex flex-col justify-between bg-slate-950 transition-opacity duration-300">
         
         {/* Mock Editor Skeleton */}
         <div className="flex gap-4 h-full w-full">
@@ -73,32 +73,32 @@ export default function InteractiveReveal() {
         </div>
       </div>
 
-      {/* ── Foreground Reveal Layer (Dynamic Mask Clip-path) ── */}
+      {/* ── Foreground Reveal Layer (Soft Feathered Radial Mask) ── */}
       <div
         className="absolute inset-0 pointer-events-none transition-all duration-300 ease-out"
         style={{
-          clipPath: `circle(${circleRadius}px at ${mousePos.x}px ${mousePos.y}px)`,
-          WebkitClipPath: `circle(${circleRadius}px at ${mousePos.x}px ${mousePos.y}px)`,
+          maskImage: `radial-gradient(circle ${circleRadius}px at ${mousePos.x}px ${mousePos.y}px, black 82%, transparent 100%)`,
+          WebkitMaskImage: `radial-gradient(circle ${circleRadius}px at ${mousePos.x}px ${mousePos.y}px, black 82%, transparent 100%)`,
         }}
       >
         <img
           src={dashboardImg}
           alt="Dashboard Workspace View"
-          className="w-full h-full object-cover select-none pointer-events-none"
+          className="w-full h-full object-cover select-none pointer-events-none transition-transform duration-500 ease-out group-hover:scale-[1.05]"
         />
       </div>
 
       {/* ── Floating Lens Cursor Ring ── */}
       <div
-        className="absolute border-2 border-sky-400 rounded-full pointer-events-none transition-all duration-300 ease-out flex items-center justify-center"
+        className="absolute border-2 border-sky-400/80 rounded-full pointer-events-none transition-all duration-300 ease-out flex items-center justify-center"
         style={{
           width: `${circleRadius * 2}px`,
           height: `${circleRadius * 2}px`,
           left: `${mousePos.x - circleRadius}px`,
           top: `${mousePos.y - circleRadius}px`,
           boxShadow: isHovering 
-            ? "0 0 25px rgba(14, 165, 233, 0.4), inset 0 0 15px rgba(14, 165, 233, 0.2)"
-            : "0 0 15px rgba(14, 165, 233, 0.2)",
+            ? "0 0 35px rgba(14, 165, 233, 0.45), inset 0 0 20px rgba(14, 165, 233, 0.25)"
+            : "0 0 20px rgba(14, 165, 233, 0.25)",
         }}
       >
         {/* Tiny crosshair center point */}
@@ -107,8 +107,8 @@ export default function InteractiveReveal() {
 
       {/* Floating Instruction Overlay */}
       {!isHovering && (
-        <div className="absolute inset-0 flex items-end justify-center pb-6 bg-gradient-to-t from-slate-950/80 to-transparent pointer-events-none">
-          <span className="text-[11px] bg-slate-900/90 text-slate-400 border border-slate-800 px-3 py-1.5 rounded-full font-medium tracking-wide uppercase shadow-lg select-none">
+        <div className="absolute inset-0 flex items-end justify-center pb-6 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent pointer-events-none">
+          <span className="text-[11px] bg-slate-900/90 text-slate-400 border border-slate-800 px-3.5 py-1.5 rounded-full font-semibold tracking-wider uppercase shadow-xl select-none animate-bounce">
             🔍 Hover to Reveal Live Dashboard
           </span>
         </div>
