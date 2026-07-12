@@ -403,36 +403,54 @@ export const TEMPLATES = {
   },
 };
 
-export const DEFAULT_MD = `# Quarterly Product Report
+export const DEFAULT_MD = `# Moovendhan | Software Engineer & Cloud Architect
 
-A short **demo document** so you can see every element styled. Replace this with your own markdown, or upload a \`.md\` file.
+![Profile Photo](https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250&h=250)
 
-## Highlights
-
-- Shipped the *self-serve onboarding* flow
-- Reduced page load time by **38%**
-- Signed 3 enterprise customers
-
-## Metrics
-
-| Metric | Q1 | Q2 | Change |
-|---|---|---|---|
-| Active users | 12,400 | 18,900 | +52% |
-| Churn | 4.1% | 2.9% | -1.2pt |
-| NPS | 41 | 55 | +14 |
-
-> Focus for next quarter: retention over acquisition.
-
-### Sample code
-
-\`\`\`
-npm install
-npm run build
-\`\`\`
-
-Read the full analysis at [example.com](https://example.com).
+Highly motivated **Software Engineer** specializing in full-stack web development and cloud-native infrastructure automation. Expert at translating product ideas into production-ready architectures, with extensive experience in React/Next.js frontends, Node.js services, and AWS/Cloudflare deployments.
 
 ---
 
-*Prepared by the product team.*
+## 🛠️ Technical Stack & Skills
+
+- **Front-End Development**: React, Next.js, Vite, TailwindCSS, State Management (Zustand, Redux)
+- **Back-End & API Design**: Node.js, Express, REST APIs, Reverse Proxies (Nginx)
+- **DevOps & Infrastructure**: Infrastructure as Code (Terraform), AWS (ECS, ALB, Route53, IAM), Cloudflare Pages
+- **Developer Workflows**: CI/CD (GitHub Actions), Docker, Git, Command-line automation
+
+---
+
+## 🚀 Key Projects
+
+### 📝 MD → Docs (Markdown Document Generator)
+*A high-fidelity markdown-to-document converter with custom styling systems.*
+- Implemented real-time Canva-style visual template selection and multi-column previews.
+- Engineered dynamic margins (A4 standard) and soft-break pagination rules for PDF/Word exports.
+- **Technologies**: React, Zustand, Radix UI, docx.js, TailwindCSS.
+
+### 🌐 Secure Nominatim Proxy Setup
+*Enterprise reverse-proxy reverse geolocation services.*
+- Architected Nginx reverse-proxies isolating core Nominatim geolocation engines.
+- Configured secure CORS handling and performance optimized cache profiles.
+- **Technologies**: Docker Compose, Nginx, Linux.
+
+---
+
+## 📈 Key Metrics & Accomplishments
+
+| Highlight | Description | Impact |
+|---|---|---|
+| Cloud Migrations | Orchestrated ECS-based modular AWS architectures | 100% infrastructure reproducibility |
+| Build Optimization | Rebuilt asset bundles and optimized Vite assets | Reduced load times by 38% |
+| CI/CD Pipelines | Deployed environment-separated Git deployment branches | Automated dev → prod releases |
+
+---
+
+> "Strive not to be a success, but rather to be of value." — Albert Einstein
+
+### Contact & Links
+- **GitHub**: [github.com/moovendhan-v](https://github.com/moovendhan-v)
+- **Website**: [moovendhan.dev](https://github.com/moovendhan-v)
+
+*Generated dynamically using MD → Docs.*
 `;
