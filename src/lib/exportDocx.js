@@ -92,6 +92,13 @@ export async function exportDocx(blocks, st, fileName) {
     return ref;
   };
 
+  const headingFont = st.heading.fontFamily && st.heading.fontFamily !== "default"
+    ? st.heading.fontFamily.split(",")[0].replace(/['"]/g, "").trim()
+    : bodyFont;
+  const titleFont = st.title.fontFamily && st.title.fontFamily !== "default"
+    ? st.title.fontFamily.split(",")[0].replace(/['"]/g, "").trim()
+    : headingFont;
+
   for (const b of blocks) {
     switch (b.type) {
       case "heading": {
@@ -104,13 +111,13 @@ export async function exportDocx(blocks, st, fileName) {
             border: st.title.rule
               ? { bottom: { style: BorderStyle.SINGLE, size: 16, color: hex(st.title.ruleColor), space: 6 } }
               : undefined,
-            children: mk({ font: bodyFont, size: half(st.title.fontSize), color: hex(st.title.color), bold: true, allCaps: st.title.uppercase }),
+            children: mk({ font: titleFont, size: half(st.title.fontSize), color: hex(st.title.color), bold: true, allCaps: st.title.uppercase }),
           }));
         } else {
           const size = b.level <= 2 ? st.heading.fontSize : Math.max(st.heading.fontSize - 2, st.page.fontSize + 1);
           children.push(new Paragraph({
             spacing: { before: 320, after: 120 },
-            children: mk({ font: bodyFont, size: half(size), color: hex(st.heading.color), bold: true, allCaps: st.heading.uppercase }),
+            children: mk({ font: headingFont, size: half(size), color: hex(st.heading.color), bold: true, allCaps: st.heading.uppercase }),
           }));
         }
         break;
@@ -209,12 +216,29 @@ export async function exportDocx(blocks, st, fileName) {
     }
   }
 
+  let topMargin = 2 * CM;
+  let bottomMargin = 2 * CM;
+  let leftMargin = 2.2 * CM;
+  let rightMargin = 2.2 * CM;
+
+  if (st.page.margin === "narrow") {
+    topMargin = 1 * CM;
+    bottomMargin = 1 * CM;
+    leftMargin = 1.2 * CM;
+    rightMargin = 1.2 * CM;
+  } else if (st.page.margin === "wide") {
+    topMargin = 2.5 * CM;
+    bottomMargin = 2.5 * CM;
+    leftMargin = 3 * CM;
+    rightMargin = 3 * CM;
+  }
+
   const doc = new Document({
     numbering: numbering.config.length ? numbering : undefined,
     styles: { default: { document: { run: { font: bodyFont, size: bodySize, color: bodyColor } } } },
     sections: [{
       properties: {
-        page: { margin: { top: 2 * CM, bottom: 2 * CM, left: 2.2 * CM, right: 2.2 * CM } },
+        page: { margin: { top: topMargin, bottom: bottomMargin, left: leftMargin, right: rightMargin } },
       },
       footers: {
         default: new Footer({

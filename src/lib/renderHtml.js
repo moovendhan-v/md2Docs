@@ -34,8 +34,15 @@ function inlineHtml(runs, st) {
 }
 
 function headingStyle(block, st) {
+  const fontFam = st.heading.fontFamily && st.heading.fontFamily !== "default"
+    ? `font-family:${st.heading.fontFamily};`
+    : "";
   if (block.isTitle) {
+    const titleFontFam = st.title.fontFamily && st.title.fontFamily !== "default"
+      ? `font-family:${st.title.fontFamily};`
+      : fontFam;
     return (
+      titleFontFam +
       `font-size:${st.title.fontSize}pt;color:${st.title.color};text-align:${st.title.align};` +
       (st.title.uppercase ? "text-transform:uppercase;letter-spacing:1px;" : "") +
       (st.title.rule ? `border-bottom:2px solid ${st.title.ruleColor};padding-bottom:8pt;` : "") +
@@ -44,6 +51,7 @@ function headingStyle(block, st) {
   }
   const size = block.level <= 2 ? st.heading.fontSize : Math.max(st.heading.fontSize - 2, st.page.fontSize + 1);
   return (
+    fontFam +
     `font-size:${size}pt;color:${st.heading.color};` +
     (st.heading.uppercase ? "text-transform:uppercase;letter-spacing:0.5px;" : "") +
     "margin:16pt 0 6pt 0;font-weight:bold;"

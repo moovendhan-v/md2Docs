@@ -1,7 +1,9 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useDocStore } from "@/store/useDocStore";
-import { PAGE, CONTENT_WIDTH, CONTENT_HEIGHT } from "@/lib/page";
+import { getPageGeometry } from "@/lib/page";
 import { baseStyle } from "@/lib/renderHtml";
+import { Button } from "@/components/ui/button";
+import { Plus, Minus } from "lucide-react";
 
 /* Splits the rendered document into real A4 pages by measuring block heights.
    Code blocks taller than a page are split line-by-line across pages instead
@@ -11,6 +13,9 @@ export default function PagedPreview({ html }) {
   const pages = useDocStore((s) => s.pages);
   const setPages = useDocStore((s) => s.setPages);
   const measureRef = useRef(null);
+  const [zoom, setZoom] = useState(1.0);
+
+  const geom = getPageGeometry(styles.page.margin || "normal");
 
   useLayoutEffect(() => {
     const root = measureRef.current;
@@ -27,25 +32,27 @@ export default function PagedPreview({ html }) {
       if (current.length) { result.push(current.join("")); current = []; }
     };
 
+    const contentHeight = geom.contentHeight;
+
     blocks.forEach((b) => {
       const top = b.offsetTop;
       const height = b.offsetHeight;
 
       // oversized <pre>: split its lines across as many pages as needed
-      if (b.tagName === "PRE" && height > CONTENT_HEIGHT) {
+      if (b.tagName === "PRE" && height > contentHeight) {
         const styleAttr = b.getAttribute("style") || "";
         const linesArr = b.innerHTML.split("\n");
         const padPx = 27; // pre padding top+bottom (10pt * 2 at 96dpi)
         const lineH = (height - padPx) / Math.max(1, linesArr.length);
 
-        let remaining = CONTENT_HEIGHT - (top - pageTop);
+        let remaining = contentHeight - (top - pageTop);
         let idx = 0;
         let lastChunkHeight = 0;
         while (idx < linesArr.length) {
           let fit = Math.floor((remaining - padPx) / lineH);
           if (fit < 3) { // not enough room — start a fresh page
             closePage();
-            remaining = CONTENT_HEIGHT;
+            remaining = contentHeight;
             fit = Math.floor((remaining - padPx) / lineH);
           }
           fit = Math.max(1, fit);
@@ -53,7 +60,7 @@ export default function PagedPreview({ html }) {
           current.push(`<pre style="${styleAttr}">${chunk}</pre>`);
           lastChunkHeight = padPx + Math.min(fit, linesArr.length - idx) * lineH;
           idx += fit;
-          if (idx < linesArr.length) { closePage(); remaining = CONTENT_HEIGHT; }
+          if (idx < linesArr.length) { closePage(); remaining = contentHeight; }
         }
         // the final chunk sits at the top of the current page — align the
         // offset bookkeeping so following blocks measure against it correctly
@@ -68,7 +75,7 @@ export default function PagedPreview({ html }) {
       }
 
       const bottom = top + height;
-      if (bottom - pageTop > CONTENT_HEIGHT && current.length > 0) {
+      if (bottom - pageTop > contentHeight && current.length > 0) {
         closePage();
         pageTop = top;
       }
@@ -76,7 +83,7 @@ export default function PagedPreview({ html }) {
     });
     closePage();
     setPages(result.length ? result : [""]);
-  }, [html, styles, setPages]);
+  }, [html, styles, setPages, geom.contentHeight]);
 
   const wrapperRef = useRef(null);
 
@@ -90,14 +97,41 @@ export default function PagedPreview({ html }) {
     }
   }, [pages]);
 
+  const containerHeight = geom.height * pages.length * zoom + (pages.length - 1) * 24 * zoom + 80;
+
   return (
-    <div ref={wrapperRef} className="flex-1 overflow-y-auto bg-canvas p-8 transition-colors">
+    <div ref={wrapperRef} className="relative flex-1 overflow-y-auto bg-canvas p-8 transition-colors">
+      {/* Zoom controls floating widget */}
+      <div className="absolute bottom-6 right-6 z-50 flex items-center gap-1 rounded-lg border bg-background/95 p-1 shadow-md backdrop-blur-sm">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
+          aria-label="Zoom out"
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </Button>
+        <span className="min-w-[40px] text-center text-xs font-semibold tabular-nums text-foreground">
+          {Math.round(zoom * 100)}%
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setZoom((z) => Math.min(1.5, z + 0.1))}
+          aria-label="Zoom in"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
       {/* hidden measurement container — exact content width of a page */}
       <div
         ref={measureRef}
         aria-hidden
         style={{
-          position: "fixed", left: -20000, top: -20000, width: CONTENT_WIDTH,
+          position: "fixed", left: -20000, top: -20000, width: geom.contentWidth,
           visibility: "hidden", pointerEvents: "none",
         }}
       >
@@ -105,24 +139,41 @@ export default function PagedPreview({ html }) {
           dangerouslySetInnerHTML={{ __html: html }} />
       </div>
 
-      <div className="mx-auto flex w-fit flex-col items-center gap-6">
-        {pages.map((pageHtml, i) => (
-          <div key={i} className="relative">
-            <div
-              className="page-content-wrapper bg-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/10"
-              style={{
-                width: PAGE.width, height: PAGE.height,
-                padding: `${PAGE.marginY}px ${PAGE.marginX}px`,
-                boxSizing: "border-box", overflow: "hidden",
-              }}
-            >
-              <div style={styleObj(baseStyle(styles))} dangerouslySetInnerHTML={{ __html: pageHtml }} />
+      <div
+        className="mx-auto flex justify-center"
+        style={{
+          height: `${containerHeight}px`,
+          width: "100%",
+        }}
+      >
+        <div
+          className="flex flex-col items-center gap-6"
+          style={{
+            transform: `scale(${zoom})`,
+            transformOrigin: "top center",
+            width: `${geom.width}px`,
+            height: `${geom.height * pages.length + (pages.length - 1) * 24}px`,
+          }}
+        >
+          {pages.map((pageHtml, i) => (
+            <div key={i} className="relative">
+              <div
+                className="page-content-wrapper shadow-[0_10px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/10"
+                style={{
+                  width: geom.width, height: geom.height,
+                  padding: `${geom.marginY}px ${geom.marginX}px`,
+                  boxSizing: "border-box", overflow: "hidden",
+                  background: styles.page.bg || "#ffffff",
+                }}
+              >
+                <div style={styleObj(baseStyle(styles))} dangerouslySetInnerHTML={{ __html: pageHtml }} />
+              </div>
+              <div className="mt-1.5 text-center text-[11px] tracking-widest text-muted-foreground">
+                PAGE {i + 1} / {pages.length}
+              </div>
             </div>
-            <div className="mt-1.5 text-center text-[11px] tracking-widest text-muted-foreground">
-              PAGE {i + 1} / {pages.length}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

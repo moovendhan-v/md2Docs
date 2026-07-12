@@ -3,10 +3,11 @@
    (For server-side vector PDFs, see README — Next.js + puppeteer route.) */
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
-import { PAGE } from "./page";
+import { getPageGeometry } from "./page";
 import { baseStyle } from "./renderHtml";
 
 export async function renderPdf(pages, styles) {
+  const geom = getPageGeometry(styles.page.margin || "normal");
   const host = document.createElement("div");
   host.style.cssText = `position:fixed;left:-20000px;top:0;`;
   document.body.appendChild(host);
@@ -18,7 +19,7 @@ export async function renderPdf(pages, styles) {
 
     for (let i = 0; i < pages.length; i++) {
       const pageEl = document.createElement("div");
-      pageEl.style.cssText = `width:${PAGE.width}px;height:${PAGE.height}px;background:#ffffff;padding:${PAGE.marginY}px ${PAGE.marginX}px;box-sizing:border-box;overflow:hidden;`;
+      pageEl.style.cssText = `width:${geom.width}px;height:${geom.height}px;background:${styles.page.bg || "#ffffff"};padding:${geom.marginY}px ${geom.marginX}px;box-sizing:border-box;overflow:hidden;`;
       pageEl.innerHTML = `<div style="${baseStyle(styles)}">${pages[i]}</div>`;
       host.appendChild(pageEl);
 
