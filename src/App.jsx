@@ -7,6 +7,7 @@ import { exportDocx } from "@/lib/exportDocx";
 import PagedPreview from "@/components/PagedPreview";
 import StylesDrawer from "@/components/StylesDrawer";
 import PdfDialog from "@/components/PdfDialog";
+import TemplatesDialog from "@/components/TemplatesDialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -14,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import {
   FileText, Upload, Download, FileType2, Paintbrush, Type, Sun, Moon, FileUp,
-  Bold, Italic, Code, Link2, Table2, Quote, Split, Info,
+  Bold, Italic, Code, Link2, Table2, Quote, Split, Info, Undo, Redo, LayoutGrid,
 } from "lucide-react";
 
 export default function App() {
@@ -30,9 +31,18 @@ export default function App() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef(null);
   const dragDepth = useRef(0);
+
+  // Custom Undo/Redo state
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const historyRef = useRef([markdown]);
+  const historyIndexRef = useRef(0);
+  const isUndoRedoAction = useRef(false);
+  const typingTimer = useRef(null);
 
   // follow system preference on first load
   useEffect(() => {
@@ -50,12 +60,89 @@ export default function App() {
     return { words, chars, minRead };
   }, [markdown]);
 
+  // Push to undo/redo history
+  const pushHistory = (newVal) => {
+    const index = historyIndexRef.current;
+    const stack = historyRef.current.slice(0, index + 1);
+    if (stack[stack.length - 1] !== newVal) {
+      stack.push(newVal);
+      if (stack.length > 50) stack.shift();
+      historyRef.current = stack;
+      historyIndexRef.current = stack.length - 1;
+      setCanUndo(true);
+      setCanRedo(false);
+    }
+  };
+
+  const handleUndo = () => {
+    const idx = historyIndexRef.current;
+    if (idx > 0) {
+      isUndoRedoAction.current = true;
+      const nextIdx = idx - 1;
+      historyIndexRef.current = nextIdx;
+      setMarkdown(historyRef.current[nextIdx]);
+      setCanUndo(nextIdx > 0);
+      setCanRedo(true);
+      setTimeout(() => {
+        document.getElementById("md-textarea")?.focus();
+      }, 30);
+    }
+  };
+
+  const handleRedo = () => {
+    const idx = historyIndexRef.current;
+    const stack = historyRef.current;
+    if (idx < stack.length - 1) {
+      isUndoRedoAction.current = true;
+      const nextIdx = idx + 1;
+      historyIndexRef.current = nextIdx;
+      setMarkdown(stack[nextIdx]);
+      setCanUndo(true);
+      setCanRedo(nextIdx < stack.length - 1);
+      setTimeout(() => {
+        document.getElementById("md-textarea")?.focus();
+      }, 30);
+    }
+  };
+
+  // Keyboard shortcut listener inside textarea
+  const handleKeyDown = (e) => {
+    const isMod = e.metaKey || e.ctrlKey;
+    if (isMod && e.key.toLowerCase() === "z") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        handleRedo();
+      } else {
+        handleUndo();
+      }
+    } else if (isMod && e.key.toLowerCase() === "y") {
+      e.preventDefault();
+      handleRedo();
+    }
+  };
+
+  // Keep history updated with typing (debounced)
+  useEffect(() => {
+    if (isUndoRedoAction.current) {
+      isUndoRedoAction.current = false;
+      return;
+    }
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(() => {
+      pushHistory(markdown);
+    }, 600);
+  }, [markdown]);
+
   const loadFile = (file) => {
     if (!file) return;
     if (!/\.(md|markdown|txt)$/i.test(file.name)) return;
     setFileName(file.name.replace(/\.(md|markdown|txt)$/i, ""));
     const reader = new FileReader();
-    reader.onload = () => setMarkdown(String(reader.result));
+    reader.onload = () => {
+      const textVal = String(reader.result);
+      setMarkdown(textVal);
+      pushHistory(textVal);
+    };
     reader.readAsText(file);
   };
 
@@ -95,11 +182,22 @@ export default function App() {
     else if (syntax === "quote") replacement = `\n> ${selected || "quote"}\n`;
     else if (syntax === "hr") replacement = `\n---\n`;
 
-    setMarkdown(before + replacement + after);
+    const newText = before + replacement + after;
+    setMarkdown(newText);
+    pushHistory(newText);
+
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + replacement.length, start + replacement.length);
     }, 50);
+  };
+
+  const handleTemplateSelectChange = (val) => {
+    if (val === "_gallery") {
+      setTemplatesOpen(true);
+    } else {
+      setTemplate(val);
+    }
   };
 
   return (
@@ -119,23 +217,33 @@ export default function App() {
 
       {/* Top bar */}
       <header className="sticky top-0 z-50 flex items-center gap-3 border-b bg-background/80 px-4 py-2.5 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-primary-foreground shadow-sm">
+        <div 
+          className="flex items-center gap-1.5 cursor-pointer hover:bg-secondary/60 p-1.5 rounded-lg transition-colors select-none group"
+          onClick={() => setTemplatesOpen(true)}
+          title="Browse visual templates library"
+        >
+          <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
             <FileText className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold tracking-tight">MD → Docs</span>
+          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">
+            Templates
+          </span>
         </div>
 
         <div className="mx-1.5 h-5 w-px bg-border" />
 
         {/* Template & Filename group */}
         <div className="flex items-center gap-2 rounded-lg bg-secondary/40 p-1 ring-1 ring-border">
-          <Select value={templateKey} onValueChange={setTemplate}>
+          <Select value={templateKey} onValueChange={handleTemplateSelectChange}>
             <SelectTrigger className="h-7 w-36 border-0 bg-transparent text-xs hover:bg-secondary/60 focus:ring-0 focus:ring-offset-0">
               <Type className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="_gallery" className="font-semibold text-primary focus:text-primary">
+                <span className="flex items-center gap-1"><LayoutGrid className="h-3 w-3" /> Visual Gallery...</span>
+              </SelectItem>
               {Object.entries(TEMPLATES).map(([k, t]) => (
                 <SelectItem key={k} value={k}>{t.name}</SelectItem>
               ))}
@@ -190,6 +298,29 @@ export default function App() {
 
           {/* Editor Toolbar */}
           <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/20 px-2 py-1 select-none">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded hover:bg-secondary/80 disabled:opacity-30"
+              onClick={handleUndo}
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded hover:bg-secondary/80 disabled:opacity-30"
+              onClick={handleRedo}
+              disabled={!canRedo}
+              title="Redo (Ctrl+Y / Ctrl+Shift+Z)"
+            >
+              <Redo className="h-3.5 w-3.5" />
+            </Button>
+
+            <div className="h-4 w-px bg-border mx-1.5" />
+
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("bold")} title="Bold">
               <Bold className="h-3.5 w-3.5" />
             </Button>
@@ -223,6 +354,7 @@ export default function App() {
             id="md-textarea"
             value={markdown}
             onChange={(e) => setMarkdown(e.target.value)}
+            onKeyDown={handleKeyDown}
             spellCheck={false}
             className="flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-[13px] leading-relaxed focus-visible:ring-0 placeholder:text-muted-foreground/50 focus:outline-none"
             placeholder="# Paste your markdown here…"
@@ -246,6 +378,7 @@ export default function App() {
 
       <StylesDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
       <PdfDialog open={pdfOpen} onOpenChange={setPdfOpen} />
+      <TemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
     </div>
   );
 }

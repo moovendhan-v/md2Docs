@@ -58,18 +58,23 @@ function MiniDoc({ styles: st }) {
   );
 }
 
-export default function TemplateGallery() {
+export default function TemplateGallery({ columns = 1, onSelect }) {
   const templateKey = useDocStore((s) => s.templateKey);
   const setTemplate = useDocStore((s) => s.setTemplate);
 
+  const handleSelect = (key) => {
+    setTemplate(key);
+    if (onSelect) onSelect(key);
+  };
+
   return (
-    <div className="grid gap-3">
+    <div className={cn("grid gap-3", columns === 2 ? "grid-cols-2" : columns === 3 ? "grid-cols-3" : "grid-cols-1")}>
       {Object.entries(TEMPLATES).map(([key, t]) => {
         const active = key === templateKey;
         return (
           <button
             key={key}
-            onClick={() => setTemplate(key)}
+            onClick={() => handleSelect(key)}
             className={cn(
               "group relative rounded-lg border p-2 text-left transition-all hover:border-primary/60 hover:shadow-sm",
               active ? "border-primary ring-2 ring-primary/30" : "border-border"
