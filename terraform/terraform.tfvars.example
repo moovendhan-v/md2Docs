@@ -1,36 +1,22 @@
-###############################################################################
-# terraform.tfvars.example
-# Copy this file to terraform.tfvars and fill in your real values.
-# NEVER commit terraform.tfvars to version control — it contains secrets.
-###############################################################################
+# Copy this file to terraform.tfvars and fill in real values.
+# terraform.tfvars should be in .gitignore — never commit it.
 
-# ── Cloudflare Auth ────────────────────────────────────────────────────────────
-# Create a token at: https://dash.cloudflare.com/profile/api-tokens
-# Required permissions: Account > Cloudflare Pages > Edit
-#                       Zone > DNS > Edit  (only if using a custom domain)
-cloudflare_api_token  = "your-cloudflare-api-token"
-cloudflare_account_id = "your-cloudflare-account-id"
+cloudflare_api_token   = "your-cloudflare-api-token"
+cloudflare_account_id  = "your-cloudflare-account-id"
 
-# ── Pages Project ──────────────────────────────────────────────────────────────
-project_name      = "md-to-docs"
-production_branch = "main"
+project_name       = "md-to-docs"
+production_branch  = "main"
 
-# ── GitHub Source ──────────────────────────────────────────────────────────────
-# Cloudflare will auto-connect via GitHub OAuth the first time you apply.
-github_owner     = "your-github-username-or-org"
-github_repo_name = "md-to-docs"
+github_owner      = "your-github-username-or-org"
+github_repo_name  = "md-to-docs"
 
-# ── Build Settings ─────────────────────────────────────────────────────────────
 node_version = "20"
 
-# ── Custom Domain (optional) ───────────────────────────────────────────────────
-# Leave these empty ("") to skip custom domain setup.
-custom_domain      = ""        # e.g. "docs.cybertechmind.com"
-cloudflare_zone_id = ""        # e.g. "abc123..."  (from Cloudflare dash > your zone)
+# Leave both blank to skip custom domain setup
+custom_domain      = ""
+cloudflare_zone_id = ""
 
-# ── R2 Remote State ────────────────────────────────────────────────────────────
-# Only needed if you are using the R2 backend in main.tf.
-# Create R2 API tokens at: Cloudflare Dashboard > R2 > Manage R2 API Tokens
-r2_account_id        = "your-cloudflare-account-id"
-r2_access_key_id     = "your-r2-access-key-id"
-r2_secret_access_key = "your-r2-secret-access-key"
+# NOTE: R2 remote-state credentials are NOT set here anymore.
+# Export them as environment variables before running deploy.sh:
+#   export R2_ACCESS_KEY_ID="your-r2-access-key-id"
+#   export R2_SECRET_ACCESS_KEY="your-r2-secret-access-key"

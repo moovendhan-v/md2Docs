@@ -1,0 +1,131 @@
+name: Terraform — Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action to run"
+        required: true
+        default: apply
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+concurrency:
+  group: terraform-deploy
+  cancel-in-progress: false # never cancel mid-apply
+
+jobs:
+  terraform:
+    name: Terraform ${{ github.event.inputs.action || (github.event_name == 'pull_request' && 'plan') || 'apply' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Terraform's S3 backend reads these exact env var names (AWS SDK naming)
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_REGION: auto
+      TF_IN_AUTOMATION: "true"
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Terraform ───────────────────────────────────────────────────
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+
+      # ── 3. Generate terraform.tfvars from secrets ────────────────────────────
+      # terraform.tfvars is gitignored so we recreate it in CI from secrets.
+      # Non-sensitive values are hardcoded here (they're already in the repo).
+      - name: Write terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          cloudflare_api_token   = "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          cloudflare_account_id  = "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+
+          project_name       = "md-to-docs"
+          production_branch  = "main"
+
+          github_owner      = "moovendhan-v"
+          github_repo_name  = "md-to-docs"
+
+          node_version = "20"
+
+          custom_domain             = ""
+          cloudflare_zone_id        = ""
+          custom_domain_record_name = "@"
+          EOF
+
+      # ── 4. terraform init ────────────────────────────────────────────────────
+      - name: Terraform Init
+        run: terraform init -upgrade
+
+      # ── 5. terraform validate ────────────────────────────────────────────────
+      - name: Terraform Validate
+        run: terraform validate
+
+      # ── 6. terraform plan (always — shown in PR + apply jobs) ────────────────
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -var-file="terraform.tfvars" -no-color -out=tfplan
+        continue-on-error: false
+
+      # ── 7. Post plan output to PR as a comment ───────────────────────────────
+      - name: Comment Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `### Terraform Plan 📋
+            \`\`\`
+            ${{ steps.plan.outputs.stdout }}
+            \`\`\`
+            *Pushed by @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      # ── 8. terraform apply (main branch push or manual apply trigger) ─────────
+      - name: Terraform Apply
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        run: terraform apply -auto-approve tfplan
+
+      # ── 9. terraform destroy (manual trigger only) ───────────────────────────
+      - name: Terraform Destroy
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        run: terraform destroy -var-file="terraform.tfvars" -auto-approve
+
+      # ── 10. Show outputs ─────────────────────────────────────────────────────
+      - name: Terraform Output
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        run: terraform output
