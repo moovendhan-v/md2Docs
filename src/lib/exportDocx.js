@@ -131,8 +131,12 @@ export async function exportDocx(blocks, st, fileName) {
         break;
       }
       case "table": {
+        const numCols = b.headers.length || 1;
+        const colWidthPercent = 100 / numCols;
+
         const cell = (inline, isHeader, striped) =>
           new TableCell({
+            width: { size: colWidthPercent, type: WidthType.PERCENTAGE },
             shading: isHeader
               ? { fill: hex(st.table.headerBg) }
               : striped ? { fill: hex(st.table.stripeColor) } : undefined,

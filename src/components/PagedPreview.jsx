@@ -72,14 +72,26 @@ export default function PagedPreview({ html }) {
     setPages(result.length ? result : [""]);
   }, [html, styles, setPages]);
 
+  const wrapperRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (wrapperRef.current) {
+      const pageDivs = wrapperRef.current.querySelectorAll(".page-content-wrapper");
+      pageDivs.forEach((el) => {
+        el.scrollTop = 0;
+        el.scrollLeft = 0;
+      });
+    }
+  }, [pages]);
+
   return (
-    <div className="flex-1 overflow-y-auto bg-canvas p-8 transition-colors">
+    <div ref={wrapperRef} className="flex-1 overflow-y-auto bg-canvas p-8 transition-colors">
       {/* hidden measurement container — exact content width of a page */}
       <div
         ref={measureRef}
         aria-hidden
         style={{
-          position: "absolute", left: -20000, top: 0, width: CONTENT_WIDTH,
+          position: "fixed", left: -20000, top: -20000, width: CONTENT_WIDTH,
           visibility: "hidden", pointerEvents: "none",
         }}
       >
@@ -91,7 +103,7 @@ export default function PagedPreview({ html }) {
         {pages.map((pageHtml, i) => (
           <div key={i} className="relative">
             <div
-              className="bg-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/10"
+              className="page-content-wrapper bg-white shadow-[0_10px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/10"
               style={{
                 width: PAGE.width, height: PAGE.height,
                 padding: `${PAGE.marginY}px ${PAGE.marginX}px`,
