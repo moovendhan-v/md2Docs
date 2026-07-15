@@ -201,12 +201,8 @@ export function parseMarkdown(md) {
   return blocks;
 }
 
-/* Auto-fit font size for code blocks: shrink so the longest line fits the
-   printable width instead of wrapping and orphaning words. Shared by the
-   HTML renderer (preview/PDF) and the .docx export. ~471pt printable width,
-   monospace advance ≈ 0.55em → size ≤ 785 / longestLine. */
-export function codeFontSize(text, defaultPt) {
-  const maxLen = Math.max(1, ...text.split("\n").map((l) => l.length));
-  const fit = 785 / maxLen;
-  return Math.max(6, Math.min(defaultPt, Math.floor(fit * 2) / 2));
+/* Constant code font size — no auto-shrink. Always uses the provided default
+   so all code blocks render at a consistent size regardless of line length. */
+export function codeFontSize(_text, defaultPt) {
+  return defaultPt;
 }
