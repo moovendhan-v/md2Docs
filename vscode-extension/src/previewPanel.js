@@ -165,15 +165,33 @@ function buildWebviewHtml(bodyHtml, styles, fileName) {
       word-break: break-word;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 </head>
 <body>
   <div class="toolbar">
     <span class="toolbar-label">📄 ${escHtml(fileName)}.md — Live Preview</span>
     <span class="toolbar-label" style="color:#4ec9b0;">MD → Docs</span>
   </div>
-  <div class="page">
+  <div class="page" id="page">
     ${bodyHtml}
   </div>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose', fontFamily: 'inherit' });
+    (async function() {
+      const els = document.querySelectorAll('.mermaid-diagram');
+      let id = 0;
+      for (const el of els) {
+        const code = el.getAttribute('data-mermaid');
+        if (!code) continue;
+        try {
+          const { svg } = await mermaid.render('mermaid-' + (id++), code);
+          el.innerHTML = svg;
+        } catch (e) {
+          el.innerHTML = '<pre style="color:red;font-size:11px;">' + (e.message || 'Mermaid error') + '</pre>';
+        }
+      }
+    })();
+  </script>
 </body>
 </html>`;
 }
