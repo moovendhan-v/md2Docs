@@ -86,6 +86,8 @@ export function blockToHtml(block, st, opts = {}) {
       return opts.hrPageBreak
         ? `<hr class="page-break" style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`
         : `<hr style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`;
+    case "mermaid":
+      return `<div class="mermaid-diagram" data-mermaid="${esc(block.text)}" style="text-align:center;margin:12pt 0;"></div>`;
     case "code": {
       const size = codeFontSize(block.text, st.page.fontSize - 1);
       return `<pre style="background:${st.code.bg};color:${st.code.color};padding:10pt;border-radius:4px;font-family:Consolas,'Courier New',monospace;font-size:${size}pt;line-height:1.45;white-space:pre;overflow:hidden;margin:8pt 0;">${esc(block.text)}</pre>`;

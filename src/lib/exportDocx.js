@@ -8,13 +8,34 @@
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   WidthType, BorderStyle, AlignmentType, ExternalHyperlink, InternalHyperlink,
-  Bookmark, LevelFormat, Footer, PageNumber, PageBreak,
+  Bookmark, LevelFormat, Footer, PageNumber, PageBreak, ImageRun,
 } from "docx";
 import { codeFontSize } from "./parser";
+import { renderMermaidSvg } from "./mermaid";
 
 const hex = (c) => (c || "#000000").replace("#", "").toUpperCase();
 const half = (pt) => Math.round(pt * 2); // docx font sizes are half-points
 const CM = 567; // twips per cm
+
+/* Render a mermaid string to a PNG Uint8Array via SVG → canvas. */
+async function mermaidToPng(text) {
+  const svg = await renderMermaidSvg(text);
+  const blob = await new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth * 2;
+      canvas.height = img.naturalHeight * 2;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(2, 2);
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((b) => resolve(b), "image/png");
+    };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  });
+  const buf = await blob.arrayBuffer();
+  return new Uint8Array(buf);
+}
 
 function runs(inline, st, opts = {}) {
   const out = [];
@@ -222,6 +243,22 @@ export async function exportDocx(blocks, st, fileName, opts = {}) {
           }));
         }
         break;
+      case "mermaid": {
+        try {
+          const pngData = await mermaidToPng(b.text);
+          children.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 120, after: 120 },
+            children: [new ImageRun({ data: pngData, transformation: { width: 400, height: 300 }, type: "png" })],
+          }));
+        } catch {
+          children.push(new Paragraph({
+            spacing: { before: 60, after: 60 },
+            children: [new TextRun({ text: "[Mermaid diagram]", color: "999999", italics: true })],
+          }));
+        }
+        break;
+      }
       default:
         break;
     }

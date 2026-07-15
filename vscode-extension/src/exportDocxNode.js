@@ -207,6 +207,13 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
           }));
         }
         break;
+      case "mermaid":
+        children.push(new Paragraph({
+          spacing: { before: 60, after: 60 },
+          border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC", space: 4 } },
+          children: [new TextRun({ text: `[Mermaid Diagram]`, color: "888888", italics: true, font: "Consolas" })],
+        }));
+        break;
       default:
         break;
     }

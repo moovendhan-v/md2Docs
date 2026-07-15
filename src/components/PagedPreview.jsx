@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useEffect, useRef, useState } from "react";
 import { useDocStore } from "@/store/useDocStore";
 import { getPageGeometry } from "@/lib/page";
 import { baseStyle } from "@/lib/renderHtml";
+import { renderMermaidDiagrams } from "@/lib/mermaid";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
 
@@ -14,8 +15,19 @@ export default function PagedPreview({ html }) {
   const setPages = useDocStore((s) => s.setPages);
   const measureRef = useRef(null);
   const [zoom, setZoom] = useState(1.0);
+  const [mermaidTick, setMermaidTick] = useState(0);
 
   const geom = getPageGeometry(styles.page.margin || "normal");
+
+  /* Render mermaid diagrams in the hidden measurement container, then
+     signal re-measurement by bumping mermaidTick. */
+  useEffect(() => {
+    const root = measureRef.current;
+    if (!root) return;
+    const container = root.firstElementChild;
+    if (!container) return;
+    renderMermaidDiagrams(container).then(() => setMermaidTick((t) => t + 1));
+  }, [html]);
 
   useLayoutEffect(() => {
     const root = measureRef.current;
@@ -83,9 +95,16 @@ export default function PagedPreview({ html }) {
     });
     closePage();
     setPages(result.length ? result : [""]);
-  }, [html, styles, setPages, geom.contentHeight]);
+  }, [html, styles, setPages, geom.contentHeight, mermaidTick]);
 
   const wrapperRef = useRef(null);
+
+  /* Render mermaid diagrams inside the visible page wrappers after pages change. */
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const wrappers = wrapperRef.current.querySelectorAll(".page-content-wrapper");
+    wrappers.forEach((w) => renderMermaidDiagrams(w));
+  }, [pages]);
 
   useLayoutEffect(() => {
     if (wrapperRef.current) {

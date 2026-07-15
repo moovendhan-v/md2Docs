@@ -98,11 +98,16 @@ export function parseMarkdown(md) {
 
     // fenced code block
     if (line.trim().startsWith("```")) {
+      const lang = line.trim().replace(/^```/, "").trim().toLowerCase();
       const buf = [];
       i++;
       while (i < lines.length && !lines[i].trim().startsWith("```")) { buf.push(lines[i]); i++; }
       i++;
-      blocks.push({ type: "code", text: buf.join("\n") });
+      if (lang === "mermaid") {
+        blocks.push({ type: "mermaid", text: buf.join("\n") });
+      } else {
+        blocks.push({ type: "code", text: buf.join("\n") });
+      }
       continue;
     }
 
