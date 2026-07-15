@@ -64,7 +64,7 @@ function runs(inline, st, opts = {}) {
 
 const ALIGN = { left: AlignmentType.LEFT, center: AlignmentType.CENTER, right: AlignmentType.RIGHT };
 
-export async function exportDocx(blocks, st, fileName) {
+export async function exportDocx(blocks, st, fileName, opts = {}) {
   const bodyFont = st.page.fontFamily.split(",")[0].replace(/['"]/g, "").trim();
   const bodySize = half(st.page.fontSize);
   const bodyColor = hex(st.page.textColor);
@@ -209,10 +209,18 @@ export async function exportDocx(blocks, st, fileName) {
         break;
       }
       case "hr":
-        children.push(new Paragraph({
-          pageBreakBefore: true,
-          children: [],
-        }));
+        if (opts.hrPageBreak !== false) {
+          children.push(new Paragraph({
+            pageBreakBefore: true,
+            children: [],
+          }));
+        } else {
+          children.push(new Paragraph({
+            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: hex(st.table.borderColor), space: 1 } },
+            spacing: { before: 120, after: 120 },
+            children: [],
+          }));
+        }
         break;
       default:
         break;

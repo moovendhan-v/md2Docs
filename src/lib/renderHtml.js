@@ -78,12 +78,14 @@ function listHtml(list, st) {
   return `<${tag}${start} style="margin:8pt 0;padding-left:22pt;">${items}</${tag}>`;
 }
 
-export function blockToHtml(block, st) {
+export function blockToHtml(block, st, opts = {}) {
   switch (block.type) {
     case "heading":
       return `<h${block.level} id="${block.id}" style="${headingStyle(block, st)}">${inlineHtml(block.inline, st)}</h${block.level}>`;
     case "hr":
-      return `<hr class="page-break" style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`;
+      return opts.hrPageBreak
+        ? `<hr class="page-break" style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`
+        : `<hr style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`;
     case "code": {
       const size = codeFontSize(block.text, st.page.fontSize - 1);
       return `<pre style="background:${st.code.bg};color:${st.code.color};padding:10pt;border-radius:4px;font-family:Consolas,'Courier New',monospace;font-size:${size}pt;line-height:1.45;white-space:pre;overflow:hidden;margin:8pt 0;">${esc(block.text)}</pre>`;
@@ -113,6 +115,6 @@ export function blockToHtml(block, st) {
   }
 }
 
-export function blocksToHtml(blocks, st) {
-  return blocks.map((b) => blockToHtml(b, st)).join("\n");
+export function blocksToHtml(blocks, st, opts = {}) {
+  return blocks.map((b) => blockToHtml(b, st, opts)).join("\n");
 }

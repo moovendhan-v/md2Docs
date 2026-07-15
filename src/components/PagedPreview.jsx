@@ -68,7 +68,7 @@ export default function PagedPreview({ html }) {
         return;
       }
 
-      if (b.tagName === "HR" || b.classList.contains("page-break")) {
+      if (b.classList.contains("page-break")) {
         closePage();
         pageTop = top + height;
         return;
