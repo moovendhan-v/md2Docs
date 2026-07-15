@@ -30,6 +30,7 @@ export default function App() {
   const templateKey = useDocStore((s) => s.templateKey);
   const setTemplate = useDocStore((s) => s.setTemplate);
   const styles = useDocStore((s) => s.styles);
+  const hrPageBreak = useDocStore((s) => s.hrPageBreak);
   const dark = useDocStore((s) => s.dark);
   const setDark = useDocStore((s) => s.setDark);
 
@@ -75,7 +76,7 @@ export default function App() {
   }, [setDark]);
 
   const blocks = useMemo(() => parseMarkdown(markdown), [markdown]);
-  const html = useMemo(() => blocksToHtml(blocks, styles), [blocks, styles]);
+  const html = useMemo(() => blocksToHtml(blocks, styles, { hrPageBreak }), [blocks, styles, hrPageBreak]);
 
   const stats = useMemo(() => {
     const cleanMd = markdown.trim();
@@ -303,7 +304,7 @@ export default function App() {
           <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs hover:text-red-500 hover:border-red-200" onClick={() => setPdfOpen(true)}>
             <FileType2 className="h-3.5 w-3.5" /> PDF
           </Button>
-          <Button size="sm" className="h-8 gap-1.5 text-xs bg-primary shadow-sm hover:shadow transition-all" onClick={() => exportDocx(blocks, styles, fileName)}>
+          <Button size="sm" className="h-8 gap-1.5 text-xs bg-primary shadow-sm hover:shadow transition-all" onClick={() => exportDocx(blocks, styles, fileName, { hrPageBreak })}>
             <Download className="h-3.5 w-3.5" /> Word (.docx)
           </Button>
         </div>

@@ -62,6 +62,8 @@ export default function CustomizePanel() {
   const styles = useDocStore((s) => s.styles);
   const updateStyle = useDocStore((s) => s.updateStyle);
   const resetStyles = useDocStore((s) => s.resetStyles);
+  const hrPageBreak = useDocStore((s) => s.hrPageBreak);
+  const setHrPageBreak = useDocStore((s) => s.setHrPageBreak);
   const [group, setGroup] = useState("page");
   const st = styles;
 
@@ -116,6 +118,7 @@ export default function CustomizePanel() {
               </Select>
             </div>
             <ColorField label="Page background" value={st.page.bg || "#ffffff"} onChange={(v) => updateStyle("page", "bg", v)} />
+            <ToggleField label="--- as page break" checked={hrPageBreak} onChange={setHrPageBreak} />
           </>
         )}
 
