@@ -1,4 +1,4 @@
-# MD → Docs for VS Code
+# MD to Docs for VS Code
 
 Convert Markdown files into professional, beautifully styled Word (.docx) documents and PDFs directly from VS Code. 
 

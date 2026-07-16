@@ -5,6 +5,9 @@
      md-to-docs.exportDocx  — Save .docx beside the source .md file
      md-to-docs.exportPdf   — Print the preview webview to PDF
 
+   Sidebar:
+     md-to-docs.sidebar     — WebviewViewProvider with live preview + export
+
    Editor title icons appear automatically on every .md file
    (configured in package.json contributes.menus.editor/title). */
 
@@ -14,6 +17,7 @@ import { parseMarkdown } from "@shared/parser";
 import { TEMPLATES } from "@shared/templates";
 import { openPreview } from "./previewPanel.js";
 import { exportDocxToFile } from "./exportDocxNode.js";
+import { SidebarProvider } from "./sidebarPanel.js";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -53,6 +57,14 @@ async function pickTemplate() {
 
 export function activate(context) {
   console.log("MD → Docs extension activated");
+
+  // ── Sidebar WebviewView ─────────────────────────────────────────────────────
+  const sidebarProvider = new SidebarProvider(context);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("md-to-docs.sidebar", sidebarProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    })
+  );
 
   // ── Preview ────────────────────────────────────────────────────────────────
   context.subscriptions.push(
@@ -105,9 +117,6 @@ export function activate(context) {
   );
 
   // ── Export PDF ─────────────────────────────────────────────────────────────
-  // Strategy: open a full-page webview, inject a print stylesheet,
-  // and ask the user to use Ctrl+P / File→Print to save as PDF.
-  // (Headless PDF via puppeteer would require an optional dependency.)
   context.subscriptions.push(
     vscode.commands.registerCommand("md-to-docs.exportPdf", async (uriArg) => {
       const uri = uriArg || getActiveMdUri();
@@ -116,7 +125,6 @@ export function activate(context) {
       const template = await pickTemplate();
       if (!template) return;
 
-      // Open a full-page webview
       const fileName = path.basename(uri.fsPath, path.extname(uri.fsPath));
       const panel = vscode.window.createWebviewPanel(
         "md-to-docs.pdf",

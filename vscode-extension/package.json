@@ -2,16 +2,39 @@
   "name": "md-to-docs",
   "displayName": "MD → Docs",
   "description": "Convert Markdown files to Word (.docx) and PDF with professional templates. Preview rendered output directly in VS Code.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "moovendhan",
   "icon": "icon.png",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other", "Formatters"],
-  "keywords": ["markdown", "docx", "word", "pdf", "export", "convert"],
+  "keywords": ["markdown", "docx", "word", "pdf", "export", "convert", "preview", "sidebar"],
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "md-to-docs-sidebar",
+          "title": "MD → Docs",
+          "icon": "icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "md-to-docs-sidebar": [
+        {
+          "type": "webview",
+          "id": "md-to-docs.sidebar",
+          "name": "Preview & Export"
+        }
+      ]
+    },
     "commands": [
+      {
+        "command": "md-to-docs.preview",
+        "title": "MD → Docs: Open Preview",
+        "icon": "$(open-preview)"
+      },
       {
         "command": "md-to-docs.exportDocx",
         "title": "MD → Docs: Save as Word (.docx)",
@@ -21,11 +44,6 @@
         "command": "md-to-docs.exportPdf",
         "title": "MD → Docs: Save as PDF",
         "icon": "$(file-pdf)"
-      },
-      {
-        "command": "md-to-docs.preview",
-        "title": "MD → Docs: Open Preview",
-        "icon": "$(open-preview)"
       }
     ],
     "menus": {
