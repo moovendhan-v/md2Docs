@@ -11,6 +11,40 @@ export default function LandingPage({ onLaunchEditor }) {
   const containerRef = useRef(null);
   const [activeTab, setActiveTab] = useState("web");
 
+  const scrollToSection = (e, targetId) => {
+    if (e) e.preventDefault();
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    const offset = 80; // Custom threshold offset (in pixels) from the top
+    const duration = 800; // Custom scroll duration (speed) in ms
+    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - offset;
+    const startPosition = window.pageYOffset;
+    const distance = targetPosition - startPosition;
+    let startTime = null;
+
+    const easeInOutQuad = (t, b, c, d) => {
+      t /= d / 2;
+      if (t < 1) return (c / 2) * t * t + b;
+      t--;
+      return (-c / 2) * (t * (t - 2) - 1) + b;
+    };
+
+    const animation = (currentTime) => {
+      if (startTime === null) startTime = currentTime;
+      const timeElapsed = currentTime - startTime;
+      const run = easeInOutQuad(timeElapsed, startPosition, distance, duration);
+      window.scrollTo(0, run);
+      if (timeElapsed < duration) {
+        requestAnimationFrame(animation);
+      } else {
+        window.scrollTo(0, targetPosition);
+      }
+    };
+
+    requestAnimationFrame(animation);
+  };
+
   // Three.js 3D Background effect
   useEffect(() => {
     if (!containerRef.current) return;
@@ -190,9 +224,9 @@ export default function LandingPage({ onLaunchEditor }) {
         </div>
 
         <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400 font-medium">
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#templates" className="hover:text-white transition-colors">Templates</a>
-          <a href="#extension" className="hover:text-white transition-colors">VS Code Extension</a>
+          <a href="#features" onClick={(e) => scrollToSection(e, "features")} className="hover:text-white transition-colors">Features</a>
+          <a href="#templates" onClick={(e) => scrollToSection(e, "templates")} className="hover:text-white transition-colors">Templates</a>
+          <a href="#extension" onClick={(e) => scrollToSection(e, "extension")} className="hover:text-white transition-colors">VS Code Extension</a>
           <a href="https://github.com/moovendhan-v/md2Docs" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
             GitHub <ExternalLink className="h-3 w-3" />
           </a>
@@ -242,7 +276,7 @@ export default function LandingPage({ onLaunchEditor }) {
             >
               Start Writing Online
             </Button>
-            <a href="#extension" className="flex items-center justify-center">
+            <a href="#extension" onClick={(e) => scrollToSection(e, "extension")} className="flex items-center justify-center">
               <Button 
                 variant="outline" 
                 className="border-slate-800 bg-slate-950 hover:bg-slate-900 text-white px-8 py-6 text-base"
