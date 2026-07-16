@@ -98,3 +98,13 @@ export async function POST(req) {
 
 Because rendering already flows through `blocksToHtml()`, the server route
 consumes the exact same HTML — no duplicate styling logic.
+
+---
+
+### 🌐 Links & Resources
+
+- **Project Homepage & App**: [md2docs.cybertechmind.com](https://md2docs.cybertechmind.com)
+- **Blog & Tutorials**: [cybertechmind.com](https://www.cybertechmind.com/)
+- **Creator Profile**: [profile.cybertechmind.com](https://profile.cybertechmind.com/)
+
+*Created with ❤️ by [Moovendhan V](https://profile.cybertechmind.com/)*

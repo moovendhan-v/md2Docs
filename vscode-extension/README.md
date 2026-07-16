@@ -1,40 +1,62 @@
-# Moovendhan V | Backend & DevOps Cloud Engineer
+# Md2Docs — Markdown to Word & PDF Converter
 
-[![Md2Docs Banner](assets/banner.png)](https://md2docs.cybertechmind.com)
-[![Md2Docs Alternative Banner](assets/banner2.png)](https://md2docs.cybertechmind.com)
+[![Md2Docs Banner](https://raw.githubusercontent.com/moovendhan-v/md2Docs/refs/heads/main/vscode-extension/assets/banner.png)](https://md2docs.cybertechmind.com)
 
-![Profile Photo](https://github.com/user-attachments/assets/cd49f32c-6d44-418e-b7de-f26b5b78b55c)
+**Md2Docs** is a professional VS Code extension that enables you to preview and export your Markdown files into styled, formatted Word (`.docx`) and PDF documents. Directly within VS Code, you can preview the rendered output in real A4 pages, choose between multiple elegant templates, and export high-fidelity documents ready for distribution.
 
-![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonaws&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 
-Highly motivated **Backend & DevOps Engineer** with 2+ years of experience building scalable APIs, microservices, and cloud-native AWS infrastructure in production environments. Proficient in designing resilient, secure, and cost-optimized cloud architectures.
+Visit the website at [md2docs.cybertechmind.com](https://md2docs.cybertechmind.com) for more details.
 
-## Professional Summary
 
-- **Backend & API Systems**: Python/Node.js APIs, microservices, and event-driven architectures using AWS SQS/SNS and Redis caching.
-- **Full-Cycle DevOps**: Docker containerization, CI/CD automation (GitHub Actions, CodePipeline), IaC (CloudFormation), and ECS Fargate deployments.
-- **Cloud Architecture**: AWS Certified Solutions Architect – Associate (SAA-C03); strong foundation in designing resilient, cost-optimized, and secure cloud environments.
+---
 
-## Certification
+## 🚀 Features
 
-**AWS Certified Solutions Architect – Associate (SAA-C03)**
-*Amazon Web Services, 2025*
-Validated expertise in designing resilient, secure, high-performing, and cost-optimized AWS architectures.
+- **Paginated A4 Preview**: See exactly what your document will look like when printed or saved. The in-editor preview slices your content into standard A4 pages with accurate headers/footers and page numbering.
+- **Native Word (`.docx`) Export**: Generates true Open XML Word documents (using the `docx` library), meaning they are fully editable and compatible with Microsoft Word, Google Docs, LibreOffice, and Pages. No quick HTML wrapping hacks.
+- **High-Fidelity PDF Export**: Generate pixel-perfect PDFs from the visual pages directly from your editor.
+- **Interactive Style & Template Panel**: Toggle between different styles, customize margins, headers, typography, tables, and colors, and see the preview update in real-time.
+- **Editor Context Menu & Icons**: Open previews, export PDF, or save Word files directly from the editor's title bar icons or the File Explorer context menu (right-click any `.md` file).
 
-## Technical Skills
+[![Md2Docs Alternative Banner](https://raw.githubusercontent.com/moovendhan-v/md2Docs/refs/heads/main/vscode-extension/assets/banner2.png)](https://md2docs.cybertechmind.com)
 
-- **Programming Languages**: Python, JavaScript/TypeScript (ES6+), Bash Scripting
-- **Backend & APIs**: FastAPI, Flask, Express.js, NestJS, RESTful APIs, GraphQL, Microservices, Event-Driven Architecture
-- **Databases & Caching**: PostgreSQL, MySQL, MongoDB, Redis, Query Optimization, Database Design
-- **AWS Services**: Lambda, ECS Fargate, EC2, RDS, S3, CloudFront, API Gateway, SQS, SNS, Cognito, CloudWatch, CloudFormation, Secrets Manager, VPC, ALB, ECR
-- **DevOps & CI/CD**: Docker, Docker Compose, GitHub Actions, AWS CodePipeline, CodeBuild, CodeDeploy, Blue-Green Deployments
-- **Security & IaC**: CloudFormation, IAM Roles & Policies, OWASP Standards, OAuth/OIDC, Secrets Management, VPC Isolation
-- **Developer Tools**: Git, Jira, Pytest, Postman, Docker Hub, Technical Documentation
+---
 
-## Contact & Links
+## 🛠️ How to Use
 
-- **GitHub**: [github.com/moovendhan-v](https://github.com/moovendhan-v)
-- **Website**: [cybertechmind.com](https://cybertechmind.com)
+1. Open any Markdown (`.md`) file in VS Code.
+2. Open the **Md2Docs** sidebar or click the **Open Preview** icon in the editor title bar.
+3. In the sidebar panel:
+   - Preview the paginated layout.
+   - Choose a layout/color template that matches your document style.
+   - Click **Save as Word (.docx)** or **Save as PDF** to export your document.
 
-*Generated dynamically using MD → Docs.*
-*md2docs.cybertechmind.com*
+---
+
+## ⚡ Extension Commands
+
+Md2Docs registers the following commands in VS Code:
+
+- `md-to-docs.preview`: Open the real-time paginated preview sidebar.
+- `md-to-docs.exportDocx`: Export the current Markdown file to Word (`.docx`).
+- `md-to-docs.exportPdf`: Export the current Markdown file to PDF.
+
+---
+
+## 🎨 Advanced Formatting Features
+
+- **Robust Link Bookmarks**: Headers automatically receive bookmark anchors, enabling clickable Table of Contents (TOC) links in both Word and PDF.
+- **Ordered List Continuation**: Literal list start numbers (e.g. `3.`) are preserved even when interrupted by code blocks or diagrams.
+- **Auto-Fitting Code Blocks**: Long lines in code blocks automatically adjust their font size to fit the page width, avoiding ugly word wrapping or clipping.
+- **Paginated Code Blocks**: Long code blocks spanning multiple pages split gracefully across page breaks.
+
+---
+
+### 🌐 Learn More & Links
+
+- **Extension Homepage & App**: [md2docs.cybertechmind.com](https://md2docs.cybertechmind.com)
+- **Blog & Tutorials**: [cybertechmind.com](https://www.cybertechmind.com/)
+- **Creator Profile**: [profile.cybertechmind.com](https://profile.cybertechmind.com/)
+
+*Created with ❤️ by [Moovendhan V](https://profile.cybertechmind.com/)*
+
