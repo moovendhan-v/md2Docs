@@ -193,7 +193,7 @@ export default function LandingPage({ onLaunchEditor }) {
           <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#templates" className="hover:text-white transition-colors">Templates</a>
           <a href="#extension" className="hover:text-white transition-colors">VS Code Extension</a>
-          <a href="https://github.com/moovendhan-v" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
+          <a href="https://github.com/moovendhan-v/md2Docs" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
             GitHub <ExternalLink className="h-3 w-3" />
           </a>
         </nav>
@@ -453,7 +453,7 @@ export default function LandingPage({ onLaunchEditor }) {
                   vscodeInstallInstruction();
                 }}
               >
-                Installation Guide
+                Install from Marketplace
               </Button>
             </div>
           </div>
@@ -465,15 +465,15 @@ export default function LandingPage({ onLaunchEditor }) {
                 <div className="h-2.5 w-2.5 rounded-full bg-red-500/30" />
                 <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/30" />
                 <div className="h-2.5 w-2.5 rounded-full bg-green-500/30" />
-                <span className="text-[11px] text-slate-500 font-mono ml-4">Terminal — Install offline package</span>
+                <span className="text-[11px] text-slate-500 font-mono ml-4">Terminal — Install Extension</span>
               </div>
               <div className="p-6 font-mono text-xs text-slate-400 text-left space-y-3">
-                <p className="text-slate-500"># Install the custom compiled extension package directly</p>
+                <p className="text-slate-500"># Install the extension from the VS Code Marketplace</p>
                 <div className="flex gap-2">
                   <span className="text-sky-400">$</span>
-                  <span className="text-slate-200">code --install-extension ./vscode-extension/md-to-docs-0.1.0.vsix</span>
+                  <span className="text-slate-200">code --install-extension Moovendhan-the-cybertechmind.md-to-docs</span>
                 </div>
-                <p className="text-emerald-500 mt-2">✓ Extension 'md-to-docs' was successfully installed.</p>
+                <p className="text-emerald-500 mt-2">✓ Extension 'Md2Docs' was successfully installed.</p>
                 <p className="text-slate-500 mt-4"># Features are active instantly on any .md file</p>
               </div>
             </div>
@@ -496,7 +496,7 @@ export default function LandingPage({ onLaunchEditor }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <a href="https://github.com/moovendhan-v" target="_blank" rel="noopener noreferrer" className="hover:text-slate-400 flex items-center gap-1 transition-colors">
+            <a href="https://github.com/moovendhan-v/md2Docs" target="_blank" rel="noopener noreferrer" className="hover:text-slate-400 flex items-center gap-1 transition-colors">
               <Github className="h-4 w-4" /> GitHub
             </a>
           </div>
@@ -508,11 +508,5 @@ export default function LandingPage({ onLaunchEditor }) {
 }
 
 function vscodeInstallInstruction() {
-  alert(
-    "To install this local extension:\n\n" +
-    "1. Open VS Code.\n" +
-    "2. Open Command Palette (Cmd+Shift+P / Ctrl+Shift+P).\n" +
-    "3. Run: 'Extensions: Install from VSIX...'\n" +
-    "4. Choose: 'vscode-extension/md-to-docs-0.1.0.vsix' from this project directory."
-  );
+  window.open("https://marketplace.visualstudio.com/items?itemName=Moovendhan-the-cybertechmind.md-to-docs", "_blank");
 }
