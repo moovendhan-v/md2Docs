@@ -1,5 +1,8 @@
 # MD → Docs Converter (MVP v3)
 
+[![Md2Docs Banner](vscode-extension/assets/banner.png)](https://md2docs.cybertechmind.com)
+[![Md2Docs Alternative Banner](vscode-extension/assets/banner2.png)](https://md2docs.cybertechmind.com)
+
 Convert Markdown into templated, styled documents with a paginated A4 preview.
 Export a **real .docx** (opens in MS Word / Google Docs / LibreOffice) or a
 **rendered PDF** with an in-app viewer.

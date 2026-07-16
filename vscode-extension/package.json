@@ -1,9 +1,10 @@
 {
   "name": "md-to-docs",
-  "displayName": "MD → Docs",
+  "displayName": "Md2Docs",
   "description": "Convert Markdown files to Word (.docx) and PDF with professional templates. Preview rendered output directly in VS Code.",
   "version": "0.2.0",
-  "publisher": "moovendhan",
+  "publisher": "moovendhan-the-cybertechmind",
+  "homepage": "https://md2docs.cybertechmind.com",
   "icon": "icon.png",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other", "Formatters"],
@@ -15,7 +16,7 @@
       "activitybar": [
         {
           "id": "md-to-docs-sidebar",
-          "title": "MD → Docs",
+          "title": "Md2Docs",
           "icon": "icon.svg"
         }
       ]
@@ -32,17 +33,17 @@
     "commands": [
       {
         "command": "md-to-docs.preview",
-        "title": "MD → Docs: Open Preview",
+        "title": "Md2Docs: Open Preview",
         "icon": "$(open-preview)"
       },
       {
         "command": "md-to-docs.exportDocx",
-        "title": "MD → Docs: Save as Word (.docx)",
+        "title": "Md2Docs: Save as Word (.docx)",
         "icon": "$(file-text)"
       },
       {
         "command": "md-to-docs.exportPdf",
-        "title": "MD → Docs: Save as PDF",
+        "title": "Md2Docs: Save as PDF",
         "icon": "$(file-pdf)"
       }
     ],
