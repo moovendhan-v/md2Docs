@@ -14,15 +14,22 @@ function wrapFlags(html, r) {
 }
 
 function inlineHtml(runs, st) {
+  if (runs.length === 1 && runs[0].text === "") {
+    return "&nbsp;";
+  }
   return runs
     .map((r) => {
-      const text = esc(r.text);
+      const text = esc(r.text || "").replace(/\n/g, "<br/>");
       switch (r.t) {
         case "code":
           return wrapFlags(
             `<code style="background:${st.code.bg};color:${st.code.color};padding:1px 5px;border-radius:3px;font-family:Consolas,'Courier New',monospace;font-size:0.9em;">${text}</code>`, r);
         case "link":
           return wrapFlags(`<a href="${esc(r.href)}" style="color:${st.link.color};">${text}</a>`, r);
+        case "image":
+          return wrapFlags(`<img src="${esc(r.src)}" alt="${esc(r.text || "")}" style="display:block;margin:12pt auto;max-width:100%;max-height:220px;border-radius:8px;object-fit:contain;" />`, r);
+        case "linked-image":
+          return wrapFlags(`<a href="${esc(r.href)}" style="display:inline-block;"><img src="${esc(r.src)}" alt="${esc(r.text || "")}" style="height:28px;margin:2px;vertical-align:middle;" /></a>`, r);
         default:
           return wrapFlags(text, r);
       }
@@ -31,8 +38,15 @@ function inlineHtml(runs, st) {
 }
 
 function headingStyle(block, st) {
+  const fontFam = st.heading.fontFamily && st.heading.fontFamily !== "default"
+    ? `font-family:${st.heading.fontFamily};`
+    : "";
   if (block.isTitle) {
+    const titleFontFam = st.title.fontFamily && st.title.fontFamily !== "default"
+      ? `font-family:${st.title.fontFamily};`
+      : fontFam;
     return (
+      titleFontFam +
       `font-size:${st.title.fontSize}pt;color:${st.title.color};text-align:${st.title.align};` +
       (st.title.uppercase ? "text-transform:uppercase;letter-spacing:1px;" : "") +
       (st.title.rule ? `border-bottom:2px solid ${st.title.ruleColor};padding-bottom:8pt;` : "") +
@@ -41,6 +55,7 @@ function headingStyle(block, st) {
   }
   const size = block.level <= 2 ? st.heading.fontSize : Math.max(st.heading.fontSize - 2, st.page.fontSize + 1);
   return (
+    fontFam +
     `font-size:${size}pt;color:${st.heading.color};` +
     (st.heading.uppercase ? "text-transform:uppercase;letter-spacing:0.5px;" : "") +
     "margin:16pt 0 6pt 0;font-weight:bold;"
@@ -63,12 +78,16 @@ function listHtml(list, st) {
   return `<${tag}${start} style="margin:8pt 0;padding-left:22pt;">${items}</${tag}>`;
 }
 
-export function blockToHtml(block, st) {
+export function blockToHtml(block, st, opts = {}) {
   switch (block.type) {
     case "heading":
       return `<h${block.level} id="${block.id}" style="${headingStyle(block, st)}">${inlineHtml(block.inline, st)}</h${block.level}>`;
     case "hr":
-      return `<hr style="border:none;border-top:1px solid ${st.table.borderColor};margin:14pt 0;" />`;
+      return opts.hrPageBreak
+        ? `<hr class="page-break" style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`
+        : `<hr style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`;
+    case "mermaid":
+      return `<div class="mermaid-diagram" data-mermaid="${esc(block.text)}" style="text-align:center;margin:12pt 0;"></div>`;
     case "code": {
       const size = codeFontSize(block.text, st.page.fontSize - 1);
       return `<pre style="background:${st.code.bg};color:${st.code.color};padding:10pt;border-radius:4px;font-family:Consolas,'Courier New',monospace;font-size:${size}pt;line-height:1.45;white-space:pre;overflow:hidden;margin:8pt 0;">${esc(block.text)}</pre>`;
@@ -88,6 +107,9 @@ export function blockToHtml(block, st) {
         .join("");
       return `<table style="border-collapse:collapse;width:100%;margin:10pt 0;${baseStyle(st)}"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
     }
+    case "html":
+      // Raw HTML block — pass through verbatim (supports <div align>, <img>, <table>, badges, etc.)
+      return `<div style="margin:8pt 0;">${block.raw}</div>`;
     case "list":
       return listHtml(block, st);
     default:
@@ -95,6 +117,6 @@ export function blockToHtml(block, st) {
   }
 }
 
-export function blocksToHtml(blocks, st) {
-  return blocks.map((b) => blockToHtml(b, st)).join("\n");
+export function blocksToHtml(blocks, st, opts = {}) {
+  return blocks.map((b) => blockToHtml(b, st, opts)).join("\n");
 }

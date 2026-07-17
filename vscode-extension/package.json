@@ -1,0 +1,101 @@
+{
+  "name": "md-to-docs",
+  "displayName": "Md2Docs",
+  "description": "Convert Markdown files to Word (.docx) and PDF with professional templates. Preview rendered output directly in VS Code.",
+  "version": "0.2.1",
+  "publisher": "moovendhan-the-cybertechmind",
+  "homepage": "https://md2docs.cybertechmind.com",
+  "icon": "icon.png",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other", "Formatters"],
+  "keywords": ["markdown", "docx", "word", "pdf", "export", "convert", "preview", "sidebar"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "md-to-docs-sidebar",
+          "title": "Md2Docs",
+          "icon": "icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "md-to-docs-sidebar": [
+        {
+          "type": "webview",
+          "id": "md-to-docs.sidebar",
+          "name": "Preview & Export"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "md-to-docs.preview",
+        "title": "Md2Docs: Open Preview",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "md-to-docs.exportDocx",
+        "title": "Md2Docs: Save as Word (.docx)",
+        "icon": "$(file-text)"
+      },
+      {
+        "command": "md-to-docs.exportPdf",
+        "title": "Md2Docs: Save as PDF",
+        "icon": "$(file-pdf)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "md-to-docs.preview",
+          "when": "resourceExtname == .md",
+          "group": "navigation@1"
+        },
+        {
+          "command": "md-to-docs.exportDocx",
+          "when": "resourceExtname == .md",
+          "group": "navigation@2"
+        },
+        {
+          "command": "md-to-docs.exportPdf",
+          "when": "resourceExtname == .md",
+          "group": "navigation@3"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "md-to-docs.exportDocx",
+          "when": "resourceExtname == .md",
+          "group": "md-to-docs@1"
+        },
+        {
+          "command": "md-to-docs.exportPdf",
+          "when": "resourceExtname == .md",
+          "group": "md-to-docs@2"
+        },
+        {
+          "command": "md-to-docs.preview",
+          "when": "resourceExtname == .md",
+          "group": "md-to-docs@3"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "package": "npm run build && vsce package",
+    "vscode:prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {
+    "docx": "^8.5.0"
+  }
+}

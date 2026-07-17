@@ -10,11 +10,17 @@ import {
 import { RotateCcw } from "lucide-react";
 
 export const FONT_OPTIONS = [
-  { label: "Arial (sans)", value: "Arial, Helvetica, sans-serif" },
+  { label: "Arial (sans-serif)", value: "Arial, Helvetica, sans-serif" },
   { label: "Georgia (serif)", value: "Georgia, 'Times New Roman', serif" },
-  { label: "Segoe UI (sans)", value: "'Segoe UI', Verdana, sans-serif" },
-  { label: "Times New Roman", value: "'Times New Roman', Times, serif" },
-  { label: "Courier (mono)", value: "'Courier New', Courier, monospace" },
+  { label: "Segoe UI (sans-serif)", value: "'Segoe UI', Verdana, sans-serif" },
+  { label: "Times New Roman (serif)", value: "'Times New Roman', Times, serif" },
+  { label: "Courier New (monospace)", value: "'Courier New', Courier, monospace" },
+  { label: "Calibri (sans-serif)", value: "Calibri, Candara, sans-serif" },
+  { label: "Garamond (serif)", value: "Garamond, 'EB Garamond', serif" },
+  { label: "Century Gothic (sans-serif)", value: "'Century Gothic', sans-serif" },
+  { label: "Baskerville (serif)", value: "Baskerville, Georgia, serif" },
+  { label: "Palatino (serif)", value: "'Palatino Linotype', Palatino, serif" },
+  { label: "Trebuchet MS (sans-serif)", value: "'Trebuchet MS', sans-serif" },
 ];
 
 function ColorField({ label, value, onChange }) {
@@ -56,6 +62,8 @@ export default function CustomizePanel() {
   const styles = useDocStore((s) => s.styles);
   const updateStyle = useDocStore((s) => s.updateStyle);
   const resetStyles = useDocStore((s) => s.resetStyles);
+  const hrPageBreak = useDocStore((s) => s.hrPageBreak);
+  const setHrPageBreak = useDocStore((s) => s.setHrPageBreak);
   const [group, setGroup] = useState("page");
   const st = styles;
 
@@ -88,7 +96,9 @@ export default function CustomizePanel() {
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {FONT_OPTIONS.map((f) => (
-                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                    <SelectItem key={f.value} value={f.value}>
+                      <span style={{ fontFamily: f.value }}>{f.label}</span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -96,11 +106,38 @@ export default function CustomizePanel() {
             <SizeField label="Body size" value={st.page.fontSize} min={8} max={16} onChange={(v) => updateStyle("page", "fontSize", v)} />
             <SizeField label="Line height (×10)" value={st.page.lineHeight * 10} min={10} max={25} onChange={(v) => updateStyle("page", "lineHeight", v / 10)} />
             <ColorField label="Text color" value={st.page.textColor} onChange={(v) => updateStyle("page", "textColor", v)} />
+            <div className="py-1.5">
+              <Label className="mb-1.5 block text-xs text-muted-foreground">Page margins</Label>
+              <Select value={st.page.margin || "normal"} onValueChange={(v) => updateStyle("page", "margin", v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal (~2cm)</SelectItem>
+                  <SelectItem value="narrow">Narrow (~1cm)</SelectItem>
+                  <SelectItem value="wide">Wide (~3cm)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <ColorField label="Page background" value={st.page.bg || "#ffffff"} onChange={(v) => updateStyle("page", "bg", v)} />
+            <ToggleField label="--- as page break" checked={hrPageBreak} onChange={setHrPageBreak} />
           </>
         )}
 
         {group === "title" && (
           <>
+            <div className="py-1.5">
+              <Label className="mb-1.5 block text-xs text-muted-foreground">Title Font (override)</Label>
+              <Select value={st.title.fontFamily || "default"} onValueChange={(v) => updateStyle("title", "fontFamily", v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default (Inherit)</SelectItem>
+                  {FONT_OPTIONS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>
+                      <span style={{ fontFamily: f.value }}>{f.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <SizeField label="Size" value={st.title.fontSize} min={16} max={44} onChange={(v) => updateStyle("title", "fontSize", v)} />
             <ColorField label="Color" value={st.title.color} onChange={(v) => updateStyle("title", "color", v)} />
             <div className="py-1.5">
@@ -124,6 +161,20 @@ export default function CustomizePanel() {
 
         {group === "heading" && (
           <>
+            <div className="py-1.5">
+              <Label className="mb-1.5 block text-xs text-muted-foreground">Headings Font (override)</Label>
+              <Select value={st.heading.fontFamily || "default"} onValueChange={(v) => updateStyle("heading", "fontFamily", v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default (Inherit)</SelectItem>
+                  {FONT_OPTIONS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>
+                      <span style={{ fontFamily: f.value }}>{f.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <SizeField label="Size (H2)" value={st.heading.fontSize} min={11} max={26} onChange={(v) => updateStyle("heading", "fontSize", v)} />
             <ColorField label="Color" value={st.heading.color} onChange={(v) => updateStyle("heading", "color", v)} />
             <ToggleField label="Uppercase" checked={st.heading.uppercase} onChange={(v) => updateStyle("heading", "uppercase", v)} />

@@ -10,10 +10,12 @@ export const useDocStore = create((set, get) => ({
   styles: clone(TEMPLATES.boardroom.styles),
   pages: [],        // paginated HTML, kept in sync by PagedPreview
   dark: false,
+  hrPageBreak: true,
 
   setMarkdown: (markdown) => set({ markdown }),
   setFileName: (fileName) => set({ fileName }),
   setPages: (pages) => set({ pages }),
+  setHrPageBreak: (hrPageBreak) => set({ hrPageBreak }),
   setTemplate: (templateKey) =>
     set({ templateKey, styles: clone(TEMPLATES[templateKey].styles) }),
   updateStyle: (group, key, value) =>
