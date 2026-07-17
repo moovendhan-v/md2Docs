@@ -85,6 +85,10 @@ export function activate(context) {
       const template = await pickTemplate();
       if (!template) return; // cancelled
 
+      const srcPath = uri.fsPath;
+      const outPath = srcPath.replace(/\.(md|markdown)$/i, ".docx");
+      let success = false;
+
       await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: "MD → Docs", cancellable: false },
         async (progress) => {
@@ -94,25 +98,25 @@ export function activate(context) {
             const md = new TextDecoder().decode(bytes);
             const blocks = parseMarkdown(md);
 
-            const srcPath = uri.fsPath;
-            const outPath = srcPath.replace(/\.(md|markdown)$/i, ".docx");
-
             await exportDocxToFile(blocks, template.styles, outPath);
-
-            const openBtn = "Open File";
-            const result = await vscode.window.showInformationMessage(
-              `✅ Saved: ${path.basename(outPath)}`,
-              openBtn
-            );
-            if (result === openBtn) {
-              vscode.env.openExternal(vscode.Uri.file(outPath));
-            }
+            success = true;
           } catch (err) {
             vscode.window.showErrorMessage(`MD → Docs: Export failed — ${err.message}`);
             console.error(err);
           }
         }
       );
+
+      if (success) {
+        const openBtn = "Open File";
+        const result = await vscode.window.showInformationMessage(
+          `✅ Saved: ${path.basename(outPath)}`,
+          openBtn
+        );
+        if (result === openBtn) {
+          vscode.env.openExternal(vscode.Uri.file(outPath));
+        }
+      }
     })
   );
 

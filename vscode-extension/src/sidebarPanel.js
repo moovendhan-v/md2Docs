@@ -156,8 +156,8 @@ export class SidebarProvider {
     }
 
     const template = TEMPLATES[this._templateKey];
-    const fileName = path.basename(this._activeUri.fsPath, path.extname(this._activeUri.fsPath));
     const outPath = this._activeUri.fsPath.replace(/\.(md|markdown)$/i, ".docx");
+    let success = false;
 
     await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "MD → Docs", cancellable: false },
@@ -169,20 +169,23 @@ export class SidebarProvider {
           const blocks = parseMarkdown(md);
 
           await exportDocxToFile(blocks, template.styles, outPath);
-
-          const openBtn = "Open File";
-          const result = await vscode.window.showInformationMessage(
-            `✅ Saved: ${path.basename(outPath)}`,
-            openBtn
-          );
-          if (result === openBtn) {
-            vscode.env.openExternal(vscode.Uri.file(outPath));
-          }
+          success = true;
         } catch (err) {
           vscode.window.showErrorMessage(`MD → Docs: Export failed — ${err.message}`);
         }
       }
     );
+
+    if (success) {
+      const openBtn = "Open File";
+      const result = await vscode.window.showInformationMessage(
+        `✅ Saved: ${path.basename(outPath)}`,
+        openBtn
+      );
+      if (result === openBtn) {
+        vscode.env.openExternal(vscode.Uri.file(outPath));
+      }
+    }
   }
 
   _buildHtml(bodyHtml, styles, fileName) {
