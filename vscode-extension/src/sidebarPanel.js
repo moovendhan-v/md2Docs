@@ -42,6 +42,12 @@ export class SidebarProvider {
           case "exportDocx":
             this._handleExportDocx();
             break;
+          case "pdfBytesGenerated":
+            this._savePdfBytes(msg.data, msg.outputPath);
+            break;
+          case "pdfError":
+            vscode.window.showErrorMessage(`MD → Docs: PDF export failed — ${msg.message}`);
+            break;
           case "printPdf":
             // Webview asked to trigger VS Code PDF print
             break;
@@ -120,32 +126,57 @@ export class SidebarProvider {
       return;
     }
 
+    const defaultUri = vscode.Uri.file(this._activeUri.fsPath.replace(/\.(md|markdown)$/i, ".pdf"));
+    const saveUri = await vscode.window.showSaveDialog({
+      defaultUri,
+      filters: { 'PDF Document': ['pdf'] }
+    });
+    if (!saveUri) return;
+
     const template = TEMPLATES[this._templateKey];
-    const fileName = path.basename(this._activeUri.fsPath, path.extname(this._activeUri.fsPath));
-    const outPath = this._activeUri.fsPath.replace(/\.(md|markdown)$/i, ".pdf");
+    const bg = template.styles.page.bg || "#ffffff";
+    const marginPreset = template.styles.page.margin || "normal";
 
-    // Open a webview with print-to-PDF styling
-    const panel = vscode.window.createWebviewPanel(
-      "md-to-docs.pdf",
-      `PDF Preview: ${fileName}`,
-      vscode.ViewColumn.One,
-      { enableScripts: true }
+    await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: "MD → Docs", cancellable: false },
+      async (progress) => {
+        progress.report({ message: "Generating PDF document…" });
+        if (this.view) {
+          this.view.webview.postMessage({
+            type: "generatePdfBytes",
+            outputPath: saveUri.fsPath,
+            bg: bg,
+            marginPreset: marginPreset
+          });
+
+          await new Promise((resolve) => {
+            const disposable = this.view.webview.onDidReceiveMessage((msg) => {
+              if (msg.type === "pdfBytesGenerated" || msg.type === "pdfError") {
+                disposable.dispose();
+                resolve();
+              }
+            });
+          });
+        }
+      }
     );
+  }
 
+  async _savePdfBytes(base64Data, outputPath) {
     try {
-      const bytes = await vscode.workspace.fs.readFile(this._activeUri);
-      const md = new TextDecoder().decode(bytes);
-      const blocks = parseMarkdown(md);
-      const bodyHtml = blocksToHtml(blocks, template.styles);
+      const buffer = Buffer.from(base64Data, "base64");
+      await vscode.workspace.fs.writeFile(vscode.Uri.file(outputPath), buffer);
 
-      panel.webview.html = buildPdfWebviewHtml(bodyHtml, template.styles, fileName);
-
-      vscode.window.showInformationMessage(
-        "📄 PDF preview opened. Use Cmd+P → 'Save as PDF' to export.",
-        { modal: false }
+      const openBtn = "Open File";
+      const result = await vscode.window.showInformationMessage(
+        `✅ Saved: ${path.basename(outputPath)}`,
+        openBtn
       );
+      if (result === openBtn) {
+        vscode.env.openExternal(vscode.Uri.file(outputPath));
+      }
     } catch (err) {
-      vscode.window.showErrorMessage(`MD → Docs: PDF preview failed — ${err.message}`);
+      vscode.window.showErrorMessage(`MD → Docs: Failed to write PDF file — ${err.message}`);
     }
   }
 
@@ -155,8 +186,15 @@ export class SidebarProvider {
       return;
     }
 
+    const defaultUri = vscode.Uri.file(this._activeUri.fsPath.replace(/\.(md|markdown)$/i, ".docx"));
+    const saveUri = await vscode.window.showSaveDialog({
+      defaultUri,
+      filters: { 'Word Document': ['docx'] }
+    });
+    if (!saveUri) return;
+
     const template = TEMPLATES[this._templateKey];
-    const outPath = this._activeUri.fsPath.replace(/\.(md|markdown)$/i, ".docx");
+    const outPath = saveUri.fsPath;
     let success = false;
 
     await vscode.window.withProgress(
@@ -223,6 +261,8 @@ export class SidebarProvider {
 <head>
   <meta charset="UTF-8" />
   <style>${commonStyles()}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="header">
@@ -259,6 +299,142 @@ export class SidebarProvider {
 
     document.getElementById('btnDocx').addEventListener('click', () => {
       vscode.postMessage({ type: 'exportDocx' });
+    });
+
+    window.addEventListener('message', async (event) => {
+      const msg = event.data;
+      if (msg.type === 'generatePdfBytes') {
+        try {
+          const pageEl = document.querySelector('.page');
+          if (!pageEl) {
+            vscode.postMessage({ type: 'pdfError', message: 'No content found' });
+            return;
+          }
+
+          function getPageGeometry(marginPreset) {
+            let marginX = 83;
+            let marginY = 75;
+            if (marginPreset === "narrow") {
+              marginX = 45;
+              marginY = 38;
+            } else if (marginPreset === "wide") {
+              marginX = 113;
+              marginY = 94;
+            }
+            return {
+              width: 794,
+              height: 1123,
+              marginX,
+              marginY,
+              contentWidth: 794 - marginX * 2,
+              contentHeight: 1123 - marginY * 2
+            };
+          }
+
+          const geom = getPageGeometry(msg.marginPreset);
+
+          // 1. Measure and Paginate
+          const measureDiv = document.createElement('div');
+          measureDiv.style.position = 'fixed';
+          measureDiv.style.left = '-20000px';
+          measureDiv.style.top = '-20000px';
+          measureDiv.style.width = geom.contentWidth + 'px';
+          measureDiv.style.visibility = 'hidden';
+          
+          measureDiv.style.fontFamily = pageEl.style.fontFamily;
+          measureDiv.style.fontSize = pageEl.style.fontSize;
+          measureDiv.style.lineHeight = pageEl.style.lineHeight;
+          measureDiv.style.color = pageEl.style.color;
+          
+          measureDiv.innerHTML = pageEl.innerHTML;
+          document.body.appendChild(measureDiv);
+
+          const blocks = Array.from(measureDiv.children);
+          const pages = [];
+          let current = [];
+          let pageTop = 0;
+
+          const closePage = () => {
+            if (current.length) {
+              pages.push(current.join(''));
+              current = [];
+            }
+          };
+
+          blocks.forEach((b) => {
+            const top = b.offsetTop;
+            const height = b.offsetHeight;
+            
+            if (b.classList.contains('page-break')) {
+              closePage();
+              pageTop = top + height;
+              return;
+            }
+            
+            const bottom = top + height;
+            if (bottom - pageTop > geom.contentHeight && current.length > 0) {
+              closePage();
+              pageTop = top;
+            }
+            current.push(b.outerHTML);
+          });
+          closePage();
+          document.body.removeChild(measureDiv);
+
+          if (pages.length === 0) {
+            pages.push(pageEl.innerHTML);
+          }
+
+          // 2. Render pages to canvas and build PDF
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          const pw = pdf.internal.pageSize.getWidth();
+          const ph = pdf.internal.pageSize.getHeight();
+
+          const renderContainer = document.createElement('div');
+          renderContainer.style.position = 'fixed';
+          renderContainer.style.left = '-20000px';
+          renderContainer.style.top = '-20000px';
+          document.body.appendChild(renderContainer);
+
+          for (let i = 0; i < pages.length; i++) {
+            const wrapEl = document.createElement('div');
+            wrapEl.style.width = geom.width + 'px';
+            wrapEl.style.height = geom.height + 'px';
+            wrapEl.style.background = msg.bg || '#ffffff';
+            wrapEl.style.padding = geom.marginY + 'px ' + geom.marginX + 'px';
+            wrapEl.style.boxSizing = 'border-box';
+            wrapEl.style.overflow = 'hidden';
+            
+            wrapEl.innerHTML = '<div style="font-family:' + pageEl.style.fontFamily + ';font-size:' + pageEl.style.fontSize + ';line-height:' + pageEl.style.lineHeight + ';color:' + pageEl.style.color + ';">' + pages[i] + '</div>';
+            renderContainer.appendChild(wrapEl);
+
+            const canvas = await html2canvas(wrapEl, {
+              scale: 2,
+              backgroundColor: msg.bg || '#ffffff',
+              useCORS: true,
+              logging: false
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            if (i > 0) pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, 0, pw, ph);
+            renderContainer.removeChild(wrapEl);
+          }
+
+          document.body.removeChild(renderContainer);
+
+          const pdfOutput = pdf.output('datauristring');
+          const base64Data = pdfOutput.split(',')[1];
+          vscode.postMessage({
+            type: 'pdfBytesGenerated',
+            data: base64Data,
+            outputPath: msg.outputPath
+          });
+        } catch (err) {
+          vscode.postMessage({ type: 'pdfError', message: err.message });
+        }
+      }
     });
   </script>
 </body>
