@@ -22,6 +22,15 @@ import {
   X, PanelLeftOpen, PanelLeftClose, PanelRightOpen, PanelRightClose,
 } from "lucide-react";
 
+const getVsCodeApi = () => {
+  if (window.__vscode_api__) return window.__vscode_api__;
+  if (window.acquireVsCodeApi) {
+    window.__vscode_api__ = window.acquireVsCodeApi();
+    return window.__vscode_api__;
+  }
+  return null;
+};
+
 export default function App() {
   const markdown = useDocStore((s) => s.markdown);
   const setMarkdown = useDocStore((s) => s.setMarkdown);
@@ -42,8 +51,62 @@ export default function App() {
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [dragging, setDragging] = useState(false);
+  const [isVsCode, setIsVsCode] = useState(false);
   const fileRef = useRef(null);
   const dragDepth = useRef(0);
+
+  // VS Code integration
+  useEffect(() => {
+    const handleVsCodeMessage = (event) => {
+      const msg = event.data;
+      if (!msg) return;
+
+      if (msg.type === "updateMarkdown") {
+        setMarkdown(msg.markdown);
+        if (msg.fileName) {
+          setFileName(msg.fileName);
+        }
+      } else if (msg.type === "generatePdfBytes") {
+        const { pages, styles } = useDocStore.getState();
+        import("@/lib/exportPdf").then(async ({ renderPdf }) => {
+          try {
+            const blobUrl = await renderPdf(pages, styles);
+            const blob = await fetch(blobUrl).then(r => r.blob());
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64Data = reader.result.split(',')[1];
+              const vscode = getVsCodeApi();
+              if (vscode) {
+                vscode.postMessage({
+                  type: "pdfBytesGenerated",
+                  data: base64Data,
+                  outputPath: msg.outputPath
+                });
+              }
+            };
+            reader.readAsDataURL(blob);
+          } catch (err) {
+            const vscode = getVsCodeApi();
+            if (vscode) {
+              vscode.postMessage({ type: "pdfError", message: err.message });
+            }
+          }
+        });
+      }
+    };
+    window.addEventListener("message", handleVsCodeMessage);
+
+    // If running in VS Code context, configure layout panels
+    const vscode = getVsCodeApi();
+    if (vscode || window.navigator.userAgent.includes("VSCode") || window.top !== window.self) {
+      setIsVsCode(true);
+      setView("editor");
+      setLeftOpen(false);
+      setRightOpen(true);
+    }
+
+    return () => window.removeEventListener("message", handleVsCodeMessage);
+  }, [setMarkdown, setFileName]);
 
   // Popstate navigation syncing
   useEffect(() => {
@@ -218,21 +281,24 @@ export default function App() {
       {/* ── Top bar ── */}
       <header className="sticky top-0 z-50 flex items-center gap-3 border-b bg-background/80 px-4 py-2.5 backdrop-blur-md shrink-0">
         {/* Logo */}
-        <div
-          className="flex items-center gap-1.5 cursor-pointer hover:bg-secondary/60 p-1.5 rounded-lg transition-colors select-none group"
-          onClick={() => navigateTo("landing")}
-          title="Return to landing page"
-        >
-          <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
-            <FileText className="h-4 w-4" />
-          </div>
-          <span className="text-sm font-semibold tracking-tight">MD → Docs</span>
-          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">
-            Home
-          </span>
-        </div>
-
-        <div className="mx-1.5 h-5 w-px bg-border" />
+        {!isVsCode && (
+          <>
+            <div
+              className="flex items-center gap-1.5 cursor-pointer hover:bg-secondary/60 p-1.5 rounded-lg transition-colors select-none group"
+              onClick={() => navigateTo("landing")}
+              title="Return to landing page"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
+                <FileText className="h-4 w-4" />
+              </div>
+              <span className="text-sm font-semibold tracking-tight">MD → Docs</span>
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wider scale-90">
+                Home
+              </span>
+            </div>
+            <div className="mx-1.5 h-5 w-px bg-border" />
+          </>
+        )}
 
         {/* Template & Filename */}
         <div className="flex items-center gap-2 rounded-lg bg-secondary/40 p-1 ring-1 ring-border">
@@ -251,61 +317,108 @@ export default function App() {
             </SelectContent>
           </Select>
 
-          <div className="h-4 w-px bg-border" />
-
-          <input
-            value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
-            className="h-7 w-36 border-0 bg-transparent px-2 text-xs outline-none focus:ring-0 placeholder:text-muted-foreground"
-            placeholder="document"
-            aria-label="File name"
-          />
+          {!isVsCode && (
+            <>
+              <div className="h-4 w-px bg-border" />
+              <input
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+                className="h-7 w-36 border-0 bg-transparent px-2 text-xs outline-none focus:ring-0 placeholder:text-muted-foreground"
+                placeholder="document"
+                aria-label="File name"
+              />
+            </>
+          )}
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
-          {/* Left panel toggle */}
+          {!isVsCode && (
+            <>
+              {/* Left panel toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-secondary"
+                onClick={() => setLeftOpen((v) => !v)}
+                title={leftOpen ? "Hide editor" : "Show editor"}
+                aria-label="Toggle editor panel"
+              >
+                {leftOpen
+                  ? <PanelLeftClose className="h-4 w-4" />
+                  : <PanelLeftOpen className="h-4 w-4" />}
+              </Button>
+
+              {/* Right panel toggle */}
+              <Button
+                variant={rightOpen ? "secondary" : "outline"}
+                size="sm"
+                className="h-8 gap-1.5 text-xs border-dashed hover:border-primary/50"
+                onClick={() => setRightOpen((v) => !v)}
+                aria-label="Toggle design panel"
+              >
+                <Paintbrush className="h-3.5 w-3.5 text-primary" /> Design
+              </Button>
+
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => fileRef.current?.click()}>
+                <Upload className="h-3.5 w-3.5" /> Upload
+              </Button>
+              <input ref={fileRef} type="file" accept=".md,.markdown,.txt" className="hidden" onChange={onUpload} />
+
+              <div className="h-5 w-px bg-border mx-1" />
+
+              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-secondary" onClick={() => setDark(!dark)} aria-label="Toggle dark mode">
+                {dark ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4" />}
+              </Button>
+
+              <div className="h-5 w-px bg-border mx-1" />
+            </>
+          )}
+
+          {isVsCode && (
+            <Button
+              variant={rightOpen ? "secondary" : "ghost"}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setRightOpen((v) => !v)}
+              title="Toggle Design Panel"
+            >
+              <Paintbrush className="h-4 w-4" />
+            </Button>
+          )}
+
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-secondary"
-            onClick={() => setLeftOpen((v) => !v)}
-            title={leftOpen ? "Hide editor" : "Show editor"}
-            aria-label="Toggle editor panel"
+            variant="outline"
+            size={isVsCode ? "icon" : "sm"}
+            className="h-8 gap-1.5 text-xs hover:text-red-500 hover:border-red-200"
+            title="Download PDF"
+            onClick={() => {
+              const vscode = getVsCodeApi();
+              if (vscode) {
+                vscode.postMessage({ type: 'exportPdf', styles, options: { hrPageBreak, showPageNumbers: true } });
+              } else {
+                setPdfOpen(true);
+              }
+            }}
           >
-            {leftOpen
-              ? <PanelLeftClose className="h-4 w-4" />
-              : <PanelLeftOpen className="h-4 w-4" />}
+            <FileText className="h-3.5 w-3.5" />
+            {!isVsCode && "PDF"}
           </Button>
 
-          {/* Right panel toggle */}
           <Button
-            variant={rightOpen ? "secondary" : "outline"}
-            size="sm"
-            className="h-8 gap-1.5 text-xs border-dashed hover:border-primary/50"
-            onClick={() => setRightOpen((v) => !v)}
-            aria-label="Toggle design panel"
+            size={isVsCode ? "icon" : "sm"}
+            className="h-8 gap-1.5 text-xs bg-primary shadow-sm hover:shadow transition-all"
+            title="Download Word (.docx)"
+            onClick={() => {
+              const vscode = getVsCodeApi();
+              if (vscode) {
+                vscode.postMessage({ type: 'exportDocx', styles, options: { hrPageBreak, showPageNumbers: true } });
+              } else {
+                exportDocx(blocks, styles, fileName, { hrPageBreak });
+              }
+            }}
           >
-            <Paintbrush className="h-3.5 w-3.5 text-primary" /> Design
-          </Button>
-
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => fileRef.current?.click()}>
-            <Upload className="h-3.5 w-3.5" /> Upload
-          </Button>
-          <input ref={fileRef} type="file" accept=".md,.markdown,.txt" className="hidden" onChange={onUpload} />
-
-          <div className="h-5 w-px bg-border mx-1" />
-
-          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-secondary" onClick={() => setDark(!dark)} aria-label="Toggle dark mode">
-            {dark ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4" />}
-          </Button>
-
-          <div className="h-5 w-px bg-border mx-1" />
-
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs hover:text-red-500 hover:border-red-200" onClick={() => setPdfOpen(true)}>
-            <FileType2 className="h-3.5 w-3.5" /> PDF
-          </Button>
-          <Button size="sm" className="h-8 gap-1.5 text-xs bg-primary shadow-sm hover:shadow transition-all" onClick={() => exportDocx(blocks, styles, fileName, { hrPageBreak })}>
-            <Download className="h-3.5 w-3.5" /> Word (.docx)
+            <Download className="h-3.5 w-3.5" />
+            {!isVsCode && "Word (.docx)"}
           </Button>
         </div>
       </header>
@@ -375,9 +488,11 @@ export default function App() {
         >
           <div className="flex items-center justify-between border-b px-4 py-2 bg-muted/10 shrink-0">
             <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Design Options</span>
-            <Button variant="ghost" size="icon" className="h-5 w-5 rounded hover:bg-secondary" onClick={() => setRightOpen(false)}>
-              <X className="h-3 w-3" />
-            </Button>
+            {!isVsCode && (
+              <Button variant="ghost" size="icon" className="h-5 w-5 rounded hover:bg-secondary" onClick={() => setRightOpen(false)}>
+                <X className="h-3 w-3" />
+              </Button>
+            )}
           </div>
           <Tabs defaultValue="templates" className="flex min-h-0 flex-1 flex-col px-4 pt-3 overflow-hidden">
             <TabsList className="w-full h-8 shrink-0">
