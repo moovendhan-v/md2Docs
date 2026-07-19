@@ -2,7 +2,7 @@
   "name": "md-to-docs",
   "displayName": "Md2Docs",
   "description": "Convert Markdown files to Word (.docx) and PDF with professional templates. Preview rendered output directly in VS Code.",
-  "version": "0.2.1",
+  "version": "0.2.4",
   "publisher": "moovendhan-the-cybertechmind",
   "homepage": "https://md2docs.cybertechmind.com",
   "icon": "icon.png",

@@ -14,7 +14,8 @@ export default function PagedPreview({ html }) {
   const pages = useDocStore((s) => s.pages);
   const setPages = useDocStore((s) => s.setPages);
   const measureRef = useRef(null);
-  const [zoom, setZoom] = useState(1.0);
+  const isVsCode = !!(window.acquireVsCodeApi || window.navigator.userAgent.includes("VSCode") || window.top !== window.self);
+  const [zoom, setZoom] = useState(() => isVsCode ? 0.4 : 1.0);
   const [mermaidTick, setMermaidTick] = useState(0);
 
   const geom = getPageGeometry(styles.page.margin || "normal");

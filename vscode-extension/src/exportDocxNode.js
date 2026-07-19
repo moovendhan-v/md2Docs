@@ -101,6 +101,34 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
     ? st.title.fontFamily.split(",")[0].replace(/['"]/g, "").trim()
     : headingFont;
 
+  let tocAdded = false;
+  const insertTOC = () => {
+    if (!opts.showTOC || tocAdded) return;
+    tocAdded = true;
+    children.push(new Paragraph({
+      spacing: { before: 240, after: 120 },
+      children: [new TextRun({ text: "Table of Contents", font: headingFont, size: half(st.heading.fontSize || 16), color: hex(st.heading.color), bold: true })]
+    }));
+    for (const bh of blocks) {
+      if (bh.type === "heading" && !bh.isTitle) {
+        const indent = (bh.level - 1) * 360;
+        children.push(new Paragraph({
+          indent: { left: indent },
+          spacing: { line: 240, after: 60 },
+          children: [
+            new InternalHyperlink({
+              anchor: bh.id,
+              children: [
+                new TextRun({ text: bh.inline.map(r => r.text).join(""), font: bodyFont, size: bodySize, color: hex(st.link.color), underline: {} })
+              ]
+            })
+          ]
+        }));
+      }
+    }
+    children.push(new Paragraph({ pageBreakBefore: true, children: [] }));
+  };
+
   for (const b of blocks) {
     switch (b.type) {
       case "heading": {
@@ -114,6 +142,7 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
               : undefined,
             children: mk({ font: titleFont, size: half(st.title.fontSize), color: hex(st.title.color), bold: true, allCaps: st.title.uppercase }),
           }));
+          insertTOC();
         } else {
           const size = b.level <= 2 ? st.heading.fontSize : Math.max(st.heading.fontSize - 2, st.page.fontSize + 1);
           children.push(new Paragraph({
@@ -219,6 +248,34 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
     }
   }
 
+  // Prepend TOC if requested but not yet added
+  if (opts.showTOC && !tocAdded) {
+    const tocChildren = [];
+    tocChildren.push(new Paragraph({
+      spacing: { before: 240, after: 120 },
+      children: [new TextRun({ text: "Table of Contents", font: headingFont, size: half(st.heading.fontSize || 16), color: hex(st.heading.color), bold: true })]
+    }));
+    for (const bh of blocks) {
+      if (bh.type === "heading" && !bh.isTitle) {
+        const indent = (bh.level - 1) * 360;
+        tocChildren.push(new Paragraph({
+          indent: { left: indent },
+          spacing: { line: 240, after: 60 },
+          children: [
+            new InternalHyperlink({
+              anchor: bh.id,
+              children: [
+                new TextRun({ text: bh.inline.map(r => r.text).join(""), font: bodyFont, size: bodySize, color: hex(st.link.color), underline: {} })
+              ]
+            })
+          ]
+        }));
+      }
+    }
+    tocChildren.push(new Paragraph({ pageBreakBefore: true, children: [] }));
+    children.unshift(...tocChildren);
+  }
+
   let topMargin = 2 * CM, bottomMargin = 2 * CM, leftMargin = 2.2 * CM, rightMargin = 2.2 * CM;
   if (st.page.margin === "narrow") { topMargin = 1 * CM; bottomMargin = 1 * CM; leftMargin = 1.2 * CM; rightMargin = 1.2 * CM; }
   else if (st.page.margin === "wide") { topMargin = 2.5 * CM; bottomMargin = 2.5 * CM; leftMargin = 3 * CM; rightMargin = 3 * CM; }
@@ -228,7 +285,7 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
     styles: { default: { document: { run: { font: bodyFont, size: bodySize, color: bodyColor } } } },
     sections: [{
       properties: { page: { margin: { top: topMargin, bottom: bottomMargin, left: leftMargin, right: rightMargin } } },
-      footers: {
+      footers: opts.showPageNumbers !== false ? {
         default: new Footer({
           children: [new Paragraph({
             alignment: AlignmentType.CENTER,
@@ -240,7 +297,7 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
             ],
           })],
         }),
-      },
+      } : undefined,
       children,
     }],
   });

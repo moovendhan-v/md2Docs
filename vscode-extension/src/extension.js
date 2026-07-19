@@ -85,6 +85,16 @@ export function activate(context) {
       const template = await pickTemplate();
       if (!template) return; // cancelled
 
+      const srcPath = uri.fsPath;
+      const defaultUri = vscode.Uri.file(srcPath.replace(/\.(md|markdown)$/i, ".docx"));
+      const saveUri = await vscode.window.showSaveDialog({
+        defaultUri,
+        filters: { 'Word Document': ['docx'] }
+      });
+      if (!saveUri) return;
+      const outPath = saveUri.fsPath;
+      let success = false;
+
       await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: "MD → Docs", cancellable: false },
         async (progress) => {
@@ -94,25 +104,25 @@ export function activate(context) {
             const md = new TextDecoder().decode(bytes);
             const blocks = parseMarkdown(md);
 
-            const srcPath = uri.fsPath;
-            const outPath = srcPath.replace(/\.(md|markdown)$/i, ".docx");
-
             await exportDocxToFile(blocks, template.styles, outPath);
-
-            const openBtn = "Open File";
-            const result = await vscode.window.showInformationMessage(
-              `✅ Saved: ${path.basename(outPath)}`,
-              openBtn
-            );
-            if (result === openBtn) {
-              vscode.env.openExternal(vscode.Uri.file(outPath));
-            }
+            success = true;
           } catch (err) {
             vscode.window.showErrorMessage(`MD → Docs: Export failed — ${err.message}`);
             console.error(err);
           }
         }
       );
+
+      if (success) {
+        const openBtn = "Open File";
+        const result = await vscode.window.showInformationMessage(
+          `✅ Saved: ${path.basename(outPath)}`,
+          openBtn
+        );
+        if (result === openBtn) {
+          vscode.env.openExternal(vscode.Uri.file(outPath));
+        }
+      }
     })
   );
 
@@ -125,32 +135,79 @@ export function activate(context) {
       const template = await pickTemplate();
       if (!template) return;
 
+      const defaultUri = vscode.Uri.file(uri.fsPath.replace(/\.(md|markdown)$/i, ".pdf"));
+      const saveUri = await vscode.window.showSaveDialog({
+        defaultUri,
+        filters: { 'PDF Document': ['pdf'] }
+      });
+      if (!saveUri) return;
+
       const fileName = path.basename(uri.fsPath, path.extname(uri.fsPath));
       const panel = vscode.window.createWebviewPanel(
         "md-to-docs.pdf",
-        `PDF Preview: ${fileName}`,
-        vscode.ViewColumn.One,
+        `Generating PDF: ${fileName}`,
+        { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
         { enableScripts: true }
       );
 
-      try {
-        const bytes = await vscode.workspace.fs.readFile(uri);
-        const md = new TextDecoder().decode(bytes);
-        const blocks = parseMarkdown(md);
+      let success = false;
 
-        const { blocksToHtml } = await import("@shared/renderHtml");
-        const bodyHtml = blocksToHtml(blocks, template.styles);
-        const styles = template.styles;
+      await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: "MD → Docs", cancellable: false },
+        async (progress) => {
+          progress.report({ message: "Generating PDF document…" });
 
-        panel.webview.html = buildPdfHtml(bodyHtml, styles, fileName);
+          try {
+            const bytes = await vscode.workspace.fs.readFile(uri);
+            const md = new TextDecoder().decode(bytes);
+            const blocks = parseMarkdown(md);
 
-        vscode.window.showInformationMessage(
-          "📄 Use Ctrl+P (or Cmd+P) → 'Save as PDF' to export.",
-          { modal: false }
+            const { blocksToHtml } = await import("@shared/renderHtml");
+            const bodyHtml = blocksToHtml(blocks, template.styles);
+            const styles = template.styles;
+            const bg = styles.page.bg || "#ffffff";
+            const marginPreset = styles.page.margin || "normal";
+
+            panel.webview.html = buildPdfHtml(bodyHtml, styles, fileName, bg, marginPreset);
+
+            // Wait for message from webview
+            await new Promise((resolve) => {
+              const disposable = panel.webview.onDidReceiveMessage(async (msg) => {
+                if (msg.type === "pdfBytesGenerated") {
+                  try {
+                    const buffer = Buffer.from(msg.data, "base64");
+                    await vscode.workspace.fs.writeFile(saveUri, buffer);
+                    success = true;
+                  } catch (err) {
+                    vscode.window.showErrorMessage(`MD → Docs: Failed to write PDF file — ${err.message}`);
+                  }
+                  disposable.dispose();
+                  panel.dispose();
+                  resolve();
+                } else if (msg.type === "pdfError") {
+                  vscode.window.showErrorMessage(`MD → Docs: PDF export failed — ${msg.message}`);
+                  disposable.dispose();
+                  panel.dispose();
+                  resolve();
+                }
+              });
+            });
+          } catch (err) {
+            vscode.window.showErrorMessage(`MD → Docs: PDF export failed — ${err.message}`);
+            panel.dispose();
+          }
+        }
+      );
+
+      if (success) {
+        const openBtn = "Open File";
+        const result = await vscode.window.showInformationMessage(
+          `✅ Saved: ${path.basename(saveUri.fsPath)}`,
+          openBtn
         );
-      } catch (err) {
-        vscode.window.showErrorMessage(`MD → Docs: PDF preview failed — ${err.message}`);
-        console.error(err);
+        if (result === openBtn) {
+          vscode.env.openExternal(saveUri);
+        }
       }
     })
   );
@@ -159,17 +216,14 @@ export function activate(context) {
 export function deactivate() {}
 
 // ── PDF webview HTML ──────────────────────────────────────────────────────────
-function buildPdfHtml(bodyHtml, styles, fileName) {
-  const bg = styles.page.bg || "#ffffff";
-
+function buildPdfHtml(bodyHtml, styles, fileName, bg, marginPreset) {
   return /* html */`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>${esc(fileName)}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    @page { size: A4; margin: 2cm 2.2cm; }
-
     * { box-sizing: border-box; }
 
     body {
@@ -191,23 +245,143 @@ function buildPdfHtml(bodyHtml, styles, fileName) {
 
     img { max-width: 100%; height: auto; }
     table { border-collapse: collapse; width: 100%; }
-
-    @media print {
-      body { background: white; }
-      .no-print { display: none; }
-    }
   </style>
 </head>
 <body>
-  <div class="no-print" style="background:#1e1e1e;color:#ccc;padding:12px 24px;font-family:system-ui;font-size:13px;display:flex;justify-content:space-between;align-items:center;">
-    <span>📄 ${esc(fileName)}.md — PDF Export Preview</span>
-    <button onclick="window.print()" style="background:#4ec9b0;color:#000;border:none;padding:6px 16px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">
-      🖨️ Print / Save as PDF
-    </button>
-  </div>
-  <div class="page-wrap">
+  <div class="page-wrap" id="pdfPage">
     ${bodyHtml}
   </div>
+  <script>
+    const vscode = acquireVsCodeApi();
+    window.addEventListener('load', async () => {
+      try {
+        const pageEl = document.getElementById('pdfPage');
+        if (!pageEl) {
+          vscode.postMessage({ type: 'pdfError', message: 'No content found' });
+          return;
+        }
+
+        function getPageGeometry(marginPreset) {
+          let marginX = 83;
+          let marginY = 75;
+          if (marginPreset === "narrow") {
+            marginX = 45;
+            marginY = 38;
+          } else if (marginPreset === "wide") {
+            marginX = 113;
+            marginY = 94;
+          }
+          return {
+            width: 794,
+            height: 1123,
+            marginX,
+            marginY,
+            contentWidth: 794 - marginX * 2,
+            contentHeight: 1123 - marginY * 2
+          };
+        }
+
+        const geom = getPageGeometry('${marginPreset}');
+
+        // 1. Measure and Paginate
+        const measureDiv = document.createElement('div');
+        measureDiv.style.position = 'fixed';
+        measureDiv.style.left = '-20000px';
+        measureDiv.style.top = '-20000px';
+        measureDiv.style.width = geom.contentWidth + 'px';
+        measureDiv.style.visibility = 'hidden';
+        
+        measureDiv.style.fontFamily = pageEl.style.fontFamily;
+        measureDiv.style.fontSize = pageEl.style.fontSize;
+        measureDiv.style.lineHeight = pageEl.style.lineHeight;
+        measureDiv.style.color = pageEl.style.color;
+        
+        measureDiv.innerHTML = pageEl.innerHTML;
+        document.body.appendChild(measureDiv);
+
+        const blocks = Array.from(measureDiv.children);
+        const pages = [];
+        let current = [];
+        let pageTop = 0;
+
+        const closePage = () => {
+          if (current.length) {
+            pages.push(current.join(''));
+            current = [];
+          }
+        };
+
+        blocks.forEach((b) => {
+          const top = b.offsetTop;
+          const height = b.offsetHeight;
+          
+          if (b.classList.contains('page-break')) {
+            closePage();
+            pageTop = top + height;
+            return;
+          }
+          
+          const bottom = top + height;
+          if (bottom - pageTop > geom.contentHeight && current.length > 0) {
+            closePage();
+            pageTop = top;
+          }
+          current.push(b.outerHTML);
+        });
+        closePage();
+        document.body.removeChild(measureDiv);
+
+        if (pages.length === 0) {
+          pages.push(pageEl.innerHTML);
+        }
+
+        // 2. Render pages to canvas and build PDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pw = pdf.internal.pageSize.getWidth();
+        const ph = pdf.internal.pageSize.getHeight();
+
+        const renderContainer = document.createElement('div');
+        renderContainer.style.position = 'fixed';
+        renderContainer.style.left = '-20000px';
+        renderContainer.style.top = '-20000px';
+        document.body.appendChild(renderContainer);
+
+        for (let i = 0; i < pages.length; i++) {
+          const wrapEl = document.createElement('div');
+          wrapEl.style.width = geom.width + 'px';
+          wrapEl.style.height = geom.height + 'px';
+          wrapEl.style.background = '${bg}';
+          wrapEl.style.padding = geom.marginY + 'px ' + geom.marginX + 'px';
+          wrapEl.style.boxSizing = 'border-box';
+          wrapEl.style.overflow = 'hidden';
+          
+          wrapEl.innerHTML = '<div style="font-family:' + pageEl.style.fontFamily + ';font-size:' + pageEl.style.fontSize + ';line-height:' + pageEl.style.lineHeight + ';color:' + pageEl.style.color + ';">' + pages[i] + '</div>';
+          renderContainer.appendChild(wrapEl);
+
+          const canvas = await html2canvas(wrapEl, {
+            scale: 2,
+            backgroundColor: '${bg}',
+            useCORS: true,
+            logging: false
+          });
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.95);
+          if (i > 0) pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, 0, pw, ph);
+          renderContainer.removeChild(wrapEl);
+        }
+
+        document.body.removeChild(renderContainer);
+
+        const pdfOutput = pdf.output('datauristring');
+        const base64Data = pdfOutput.split(',')[1];
+        vscode.postMessage({ type: 'pdfBytesGenerated', data: base64Data });
+      } catch (err) {
+        vscode.postMessage({ type: 'pdfError', message: err.message });
+      }
+    });
+  </script>
 </body>
 </html>`;
 }
