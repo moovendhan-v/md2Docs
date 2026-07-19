@@ -140,12 +140,18 @@ export function blockToHtml(block, st, opts = {}, overrides = {}) {
       const cellPad = "padding:5pt 8pt;";
       const headerAlign = st.table.headerAlign || "left";
       const th = block.headers
-        .map((c) => `<th style="${cellPad}background:${st.table.headerBg};color:${st.table.headerColor};border:1px solid ${st.table.borderColor};text-align:${headerAlign};font-weight:bold;">${inlineHtml(c, st)}</th>`)
+        .map((c, ci) => {
+          const align = block.alignments?.[ci] || headerAlign;
+          return `<th style="${cellPad}background:${st.table.headerBg};color:${st.table.headerColor};border:1px solid ${st.table.borderColor};text-align:${align};font-weight:bold;">${inlineHtml(c, st)}</th>`;
+        })
         .join("");
       const trs = block.rows
         .map((r, ri) => {
           const bg = st.table.striped && ri % 2 === 1 ? `background:${st.table.stripeColor};` : "";
-          return `<tr>${r.map((c) => `<td style="${cellPad}border:1px solid ${st.table.borderColor};${bg}">${inlineHtml(c, st)}</td>`).join("")}</tr>`;
+          return `<tr>${r.map((c, ci) => {
+            const align = block.alignments?.[ci] || "left";
+            return `<td style="${cellPad}border:1px solid ${st.table.borderColor};text-align:${align};${bg}">${inlineHtml(c, st)}</td>`;
+          }).join("")}</tr>`;
         })
         .join("");
       const base = `border-collapse:collapse;width:100%;margin:10pt 0;${baseStyle(st)}`;

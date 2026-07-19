@@ -91,6 +91,8 @@ export default function PagedPreview({ html }) {
 
   const isHorizontal = canvasLayout === "horizontal";
 
+  const [layoutTick, setLayoutTick] = useState(0);
+
   /* Mermaid in hidden measurement container */
   useEffect(() => {
     const root = measureRef.current;
@@ -98,6 +100,34 @@ export default function PagedPreview({ html }) {
     const container = root.firstElementChild;
     if (!container) return;
     renderMermaidDiagrams(container).then(() => setMermaidTick((t) => t + 1));
+  }, [html]);
+
+  /* ResizeObserver to detect image loading and layout shifts in measurement container */
+  useEffect(() => {
+    const root = measureRef.current;
+    if (!root) return;
+    const container = root.firstElementChild;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      setLayoutTick((t) => t + 1);
+    });
+    observer.observe(container);
+
+    const handleLoad = () => setLayoutTick((t) => t + 1);
+    const images = container.querySelectorAll("img");
+    images.forEach((img) => {
+      img.addEventListener("load", handleLoad);
+      img.addEventListener("error", handleLoad);
+    });
+
+    return () => {
+      observer.disconnect();
+      images.forEach((img) => {
+        img.removeEventListener("load", handleLoad);
+        img.removeEventListener("error", handleLoad);
+      });
+    };
   }, [html]);
 
   useLayoutEffect(() => {
@@ -152,7 +182,7 @@ export default function PagedPreview({ html }) {
     });
     closePage();
     setPages(result.length ? result : [""]);
-  }, [html, styles, setPages, geom.contentHeight, mermaidTick, showPageNumbers]);
+  }, [html, styles, setPages, geom.contentHeight, mermaidTick, showPageNumbers, layoutTick]);
 
   const wrapperRef = useRef(null);
 
