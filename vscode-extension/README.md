@@ -1,6 +1,6 @@
 # Md2Docs — Markdown to Word & PDF Converter
 
-[![Md2Docs Banner](https://raw.githubusercontent.com/moovendhan-v/md2Docs/refs/heads/main/vscode-extension/assets/banner.png)](https://md2docs.cybertechmind.com)
+[![Md2Docs Banner](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/banner.png)](https://md2docs.cybertechmind.com)
 
 **Md2Docs** is a professional VS Code extension that enables you to preview and export your Markdown files into styled, formatted Word (`.docx`) and PDF documents. Directly within VS Code, you can preview the rendered output in real A4 pages, choose between multiple elegant templates, and export high-fidelity documents ready for distribution.
 
@@ -18,7 +18,7 @@ Visit the website at [md2docs.cybertechmind.com](https://md2docs.cybertechmind.c
 - **Interactive Style & Template Panel**: Toggle between different styles, customize margins, headers, typography, tables, and colors, and see the preview update in real-time.
 - **Editor Context Menu & Icons**: Open previews, export PDF, or save Word files directly from the editor's title bar icons or the File Explorer context menu (right-click any `.md` file).
 
-[![Md2Docs Alternative Banner](https://raw.githubusercontent.com/moovendhan-v/md2Docs/refs/heads/main/vscode-extension/assets/banner2.png)](https://md2docs.cybertechmind.com)
+[![Md2Docs Alternative Banner](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/banner2.png)](https://md2docs.cybertechmind.com)
 
 ---
 
@@ -31,7 +31,7 @@ Visit the website at [md2docs.cybertechmind.com](https://md2docs.cybertechmind.c
    - Choose a layout/color template that matches your document style.
    - Click **Save as Word (.docx)** or **Save as PDF** to export your document.
 
-[![Md2Docs Customization & Docx Export](https://raw.githubusercontent.com/moovendhan-v/md2Docs/refs/heads/main/vscode-extension/assets/banner3.png)](https://md2docs.cybertechmind.com)
+[![Md2Docs Customization & Docx Export](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/banner3.png)](https://md2docs.cybertechmind.com)
 
 ---
 
@@ -58,11 +58,14 @@ Md2Docs registers the following commands in VS Code:
 
 Prefer using a web interface? Access the same rendering engine, templates, and styling tools via the web application:
 
-[![Md2Docs Web Dashboard](https://raw.githubusercontent.com/moovendhan-v/md2Docs/refs/heads/main/vscode-extension/assets/website_banner.png)](https://md2docs.cybertechmind.com)
+[![Md2Docs Web Dashboard](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/website_banner.png)](https://md2docs.cybertechmind.com)
 
 ---
 
 ### 🌐 Learn More & Links
+
+[![Author Profile](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/moovendhan_banner.png)](https://profile.cybertechmind.com/)
+
 
 - **Extension Homepage & App**: [md2docs.cybertechmind.com](https://md2docs.cybertechmind.com)
 - **Blog & Tutorials**: [cybertechmind.com](https://www.cybertechmind.com/)
