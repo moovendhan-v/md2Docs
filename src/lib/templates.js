@@ -406,7 +406,7 @@ export const TEMPLATES = {
 
 export const DEFAULT_MD = `# Moovendhan V | Backend & DevOps Cloud Engineer
 
-![Profile Photo](https://github.com/user-attachments/assets/cd49f32c-6d44-418e-b7de-f26b5b78b55c)
+![Profile Photo](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/moovendhan_banner.png)
 
 ## Tech Stack
 
