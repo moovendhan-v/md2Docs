@@ -23,7 +23,7 @@ export class SidebarProvider {
   resolveWebviewView(webviewView) {
     this.view = webviewView;
 
-    const distPath = path.join(this.context.extensionPath, '..', 'dist');
+    const distPath = path.join(this.context.extensionPath, 'dist', 'client');
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -119,7 +119,7 @@ export class SidebarProvider {
       const fileName = path.basename(this._activeUri.fsPath, path.extname(this._activeUri.fsPath));
 
       if (!this._htmlLoaded) {
-        const distPath = path.join(this.context.extensionPath, '..', 'dist');
+        const distPath = path.join(this.context.extensionPath, 'dist', 'client');
         const indexPath = path.join(distPath, 'index.html');
         let htmlContent = await fs.promises.readFile(indexPath, 'utf8');
 
