@@ -39,6 +39,7 @@ export default function App() {
   const templateKey = useDocStore((s) => s.templateKey);
   const setTemplate = useDocStore((s) => s.setTemplate);
   const styles = useDocStore((s) => s.styles);
+  const elementOverrides = useDocStore((s) => s.elementOverrides);
   const hrPageBreak = useDocStore((s) => s.hrPageBreak);
   const dark = useDocStore((s) => s.dark);
   const setDark = useDocStore((s) => s.setDark);
@@ -139,7 +140,11 @@ export default function App() {
   }, [setDark]);
 
   const blocks = useMemo(() => parseMarkdown(markdown), [markdown]);
-  const html = useMemo(() => blocksToHtml(blocks, styles, { hrPageBreak }), [blocks, styles, hrPageBreak]);
+  const html = useMemo(
+    () => blocksToHtml(blocks, styles, { hrPageBreak }, elementOverrides),
+    [blocks, styles, hrPageBreak, elementOverrides]
+  );
+
 
   const stats = useMemo(() => {
     const cleanMd = markdown.trim();

@@ -61,3 +61,44 @@
   min-height: 0 !important;
 }
 
+/* ── Preview interactive hover highlights ─────────────────────────────────── */
+
+/* enable pointer events inside the preview */
+.preview-interactive {
+  cursor: default;
+}
+
+/* generic block hover */
+.preview-interactive h1:hover,
+.preview-interactive h2:hover,
+.preview-interactive h3:hover,
+.preview-interactive h4:hover,
+.preview-interactive h5:hover,
+.preview-interactive h6:hover,
+.preview-interactive p:hover,
+.preview-interactive pre:hover,
+.preview-interactive blockquote:hover,
+.preview-interactive ul:hover,
+.preview-interactive ol:hover,
+.preview-interactive table:hover,
+.preview-interactive a:hover,
+.preview-interactive img:hover,
+.preview-interactive hr:hover {
+  outline: 2px dashed rgba(99,102,241,0.35) !important;
+  outline-offset: 3px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* per-type accent colours on hover */
+.preview-interactive h1:hover { outline-color: rgba(99,102,241,0.55) !important; }
+.preview-interactive h2:hover,
+.preview-interactive h3:hover,
+.preview-interactive h4:hover,
+.preview-interactive h5:hover,
+.preview-interactive h6:hover { outline-color: rgba(2,132,199,0.55) !important; }
+.preview-interactive table:hover { outline-color: rgba(5,150,105,0.55) !important; }
+.preview-interactive pre:hover  { outline-color: rgba(124,58,237,0.55) !important; }
+.preview-interactive blockquote:hover { outline-color: rgba(217,119,6,0.55) !important; }
+.preview-interactive a:hover    { outline-color: rgba(14,165,233,0.55) !important; }
+.preview-interactive img:hover  { outline-color: rgba(148,163,184,0.55) !important; }
