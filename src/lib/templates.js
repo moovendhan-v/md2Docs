@@ -506,6 +506,8 @@ const md2Docs = {
 
 ## Contact & Links
 
+![Author Profile](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/moovendhan_banner.png) 
+
 - **GitHub**: [github.com/moovendhan-v](https://github.com/moovendhan-v/md2Docs)
 - **Website**: [cybertechmind.com](https://cybertechmind.com)
 

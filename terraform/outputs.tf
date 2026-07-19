@@ -32,3 +32,14 @@ output "project_id" {
   description = "Internal Cloudflare Pages project ID"
   value       = cloudflare_pages_project.md_to_docs.id
 }
+
+output "md2docx_url" {
+  description = "Primary URL for md2docx subdomain (custom domain if set)"
+  value       = var.md2docx_domain != "" ? "https://${var.md2docx_domain}" : "not configured"
+}
+
+output "md2pdf_url" {
+  description = "Primary URL for md2pdf subdomain (custom domain if set)"
+  value       = var.md2pdf_domain != "" ? "https://${var.md2pdf_domain}" : "not configured"
+}
+
