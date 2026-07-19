@@ -250,8 +250,8 @@ export default function LandingPage({ onLaunchEditor }) {
       </header>
 
       {/* ── Hero Section ── */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-16 md:pt-32 md:pb-24 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-        <div className="md:col-span-7 flex flex-col items-start text-left">
+      <section className="relative z-10 max-w-5xl mx-auto px-6 pt-20 pb-16 md:pt-32 md:pb-24 flex flex-col items-center justify-center text-center">
+        <div className="flex flex-col items-center text-center">
           
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-500/30 bg-sky-950/30 text-sky-400 text-xs font-semibold mb-6 animate-pulse">
             <Sparkles className="h-3.5 w-3.5" />
@@ -269,7 +269,7 @@ export default function LandingPage({ onLaunchEditor }) {
             Create beautifully stylized Word (.docx) and PDF files natively from your markdown. Fully offline compatible. Use it in the web editor or directly inside VS Code.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
             <Button 
               className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-8 py-6 text-base shadow-xl shadow-sky-500/20"
               onClick={onLaunchEditor}
@@ -287,17 +287,12 @@ export default function LandingPage({ onLaunchEditor }) {
           </div>
 
           {/* Quick stats / features badges */}
-          <div className="flex flex-wrap gap-6 mt-12 text-xs text-slate-500 font-medium">
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-12 text-xs text-slate-500 font-medium">
             <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-amber-500" /> 100% Client-Side</span>
             <span className="flex items-center gap-1.5"><Layers className="h-4 w-4 text-sky-500" /> 5+ Curated Styles</span>
             <span className="flex items-center gap-1.5"><Cpu className="h-4 w-4 text-teal-500" /> Real .docx Generation</span>
           </div>
 
-        </div>
-
-        {/* Right Column: Interactive Dashboard Reveal */}
-        <div className="md:col-span-5 flex justify-center items-center z-10 w-full">
-          <InteractiveReveal onLaunchEditor={onLaunchEditor} />
         </div>
       </section>
 
