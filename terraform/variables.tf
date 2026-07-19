@@ -66,3 +66,28 @@ variable "dev_domain_record_name" {
   type        = string
   default     = ""
 }
+
+variable "md2docx_domain" {
+  description = "Full custom domain for the md2docx subdomain (e.g. md2docx.cybertechmind.com). Leave empty to skip."
+  type        = string
+  default     = ""
+}
+
+variable "md2docx_record_name" {
+  description = "DNS subdomain label for md2docx domain (e.g. \"md2docx\" for md2docx.cybertechmind.com)."
+  type        = string
+  default     = ""
+}
+
+variable "md2pdf_domain" {
+  description = "Full custom domain for the md2pdf subdomain (e.g. md2pdf.cybertechmind.com). Leave empty to skip."
+  type        = string
+  default     = ""
+}
+
+variable "md2pdf_record_name" {
+  description = "DNS subdomain label for md2pdf domain (e.g. \"md2pdf\" for md2pdf.cybertechmind.com)."
+  type        = string
+  default     = ""
+}
+

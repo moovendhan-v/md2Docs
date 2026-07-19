@@ -12,9 +12,18 @@ github_repo_name  = "md-to-docs"
 
 node_version = "20"
 
-# Leave both blank to skip custom domain setup
-custom_domain      = ""
-cloudflare_zone_id = ""
+# Leave all blank to skip custom domain setup
+custom_domain             = ""
+custom_domain_record_name = "@"
+cloudflare_zone_id        = ""
+
+# Extra subdomains (Optional)
+md2docx_domain      = "" # e.g. "md2docx.cybertechmind.com"
+md2docx_record_name = "" # e.g. "md2docx"
+
+md2pdf_domain      = "" # e.g. "md2pdf.cybertechmind.com"
+md2pdf_record_name = "" # e.g. "md2pdf"
+
 
 # NOTE: R2 remote-state credentials are NOT set here anymore.
 # Export them as environment variables before running deploy.sh:
