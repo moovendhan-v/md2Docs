@@ -24,8 +24,10 @@ function inlineHtml(runs, st) {
         case "code":
           return wrapFlags(
             `<code style="background:${st.code.bg};color:${st.code.color};padding:1px 5px;border-radius:3px;font-family:Consolas,'Courier New',monospace;font-size:0.9em;">${text}</code>`, r);
-        case "link":
-          return wrapFlags(`<a href="${esc(r.href)}" style="color:${st.link.color};">${text}</a>`, r);
+        case "link": {
+          const underline = st.link.underline !== false ? "text-decoration:underline;" : "text-decoration:none;";
+          return wrapFlags(`<a href="${esc(r.href)}" style="color:${st.link.color};${underline}">${text}</a>`, r);
+        }
         case "image":
           return wrapFlags(`<img src="${esc(r.src)}" alt="${esc(r.text || "")}" style="display:block;margin:12pt auto;max-width:100%;max-height:220px;border-radius:8px;object-fit:contain;" />`, r);
         case "linked-image":
@@ -41,23 +43,30 @@ function headingStyle(block, st) {
   const fontFam = st.heading.fontFamily && st.heading.fontFamily !== "default"
     ? `font-family:${st.heading.fontFamily};`
     : "";
+  const letterSpacing = st.heading.letterSpacing ? `letter-spacing:${st.heading.letterSpacing}px;` : "";
   if (block.isTitle) {
     const titleFontFam = st.title.fontFamily && st.title.fontFamily !== "default"
       ? `font-family:${st.title.fontFamily};`
       : fontFam;
+    const titleLetterSpacing = st.title.letterSpacing ? `letter-spacing:${st.title.letterSpacing}px;` : "";
+    const ruleWidth = st.title.ruleWidth || 2;
     return (
       titleFontFam +
       `font-size:${st.title.fontSize}pt;color:${st.title.color};text-align:${st.title.align};` +
-      (st.title.uppercase ? "text-transform:uppercase;letter-spacing:1px;" : "") +
-      (st.title.rule ? `border-bottom:2px solid ${st.title.ruleColor};padding-bottom:8pt;` : "") +
+      (st.title.uppercase ? "text-transform:uppercase;" : "") +
+      titleLetterSpacing +
+      (st.title.rule ? `border-bottom:${ruleWidth}px solid ${st.title.ruleColor};padding-bottom:8pt;` : "") +
       "margin:0 0 14pt 0;font-weight:bold;"
     );
   }
   const size = block.level <= 2 ? st.heading.fontSize : Math.max(st.heading.fontSize - 2, st.page.fontSize + 1);
+  const headingRuleWidth = st.heading.ruleWidth || 1;
   return (
     fontFam +
     `font-size:${size}pt;color:${st.heading.color};` +
-    (st.heading.uppercase ? "text-transform:uppercase;letter-spacing:0.5px;" : "") +
+    (st.heading.uppercase ? "text-transform:uppercase;" : "") +
+    letterSpacing +
+    (st.heading.rule ? `border-bottom:${headingRuleWidth}px solid ${st.heading.ruleColor || st.heading.color};padding-bottom:4pt;` : "") +
     "margin:16pt 0 6pt 0;font-weight:bold;"
   );
 }
@@ -67,7 +76,6 @@ function listHtml(list, st) {
   const start = list.ordered && list.start > 1 ? ` start="${list.start}"` : "";
   const items = list.items
     .map((it) => {
-      // nested items arrive either as {inline, children} or plain run arrays
       const inline = it.inline || it;
       const child = it.children
         ? listHtml({ ordered: it.children.ordered, start: it.children.start, items: it.children.items }, st)
@@ -90,14 +98,24 @@ export function blockToHtml(block, st, opts = {}) {
       return `<div class="mermaid-diagram" data-mermaid="${esc(block.text)}" style="text-align:center;margin:12pt 0;"></div>`;
     case "code": {
       const size = codeFontSize(block.text, st.page.fontSize - 1);
-      return `<pre style="background:${st.code.bg};color:${st.code.color};padding:10pt;border-radius:4px;font-family:Consolas,'Courier New',monospace;font-size:${size}pt;line-height:1.45;white-space:pre;overflow:hidden;margin:8pt 0;">${esc(block.text)}</pre>`;
+      const radius = st.code.borderRadius !== undefined ? `${st.code.borderRadius}px` : "4px";
+      const codeBorder = st.code.border
+        ? `border:1px solid ${st.code.borderColor || "#e5e7eb"};`
+        : "";
+      return `<pre style="background:${st.code.bg};color:${st.code.color};padding:10pt;border-radius:${radius};${codeBorder}font-family:Consolas,'Courier New',monospace;font-size:${size}pt;line-height:1.45;white-space:pre;overflow:hidden;margin:8pt 0;">${esc(block.text)}</pre>`;
     }
-    case "blockquote":
-      return `<blockquote style="border-left:3px solid ${st.blockquote.borderColor};margin:10pt 0;padding:2pt 0 2pt 12pt;color:${st.blockquote.color};${st.blockquote.italic ? "font-style:italic;" : ""}">${block.lines.map((l) => inlineHtml(l, st)).join("<br/>")}</blockquote>`;
+    case "blockquote": {
+      const bqBorderWidth = st.blockquote.borderWidth || 3;
+      const bqBg = st.blockquote.bg && st.blockquote.bg !== "transparent"
+        ? `background:${st.blockquote.bg};padding:4pt 12pt;`
+        : "padding:2pt 0 2pt 12pt;";
+      return `<blockquote style="border-left:${bqBorderWidth}px solid ${st.blockquote.borderColor};margin:10pt 0;${bqBg}color:${st.blockquote.color};${st.blockquote.italic ? "font-style:italic;" : ""}">${block.lines.map((l) => inlineHtml(l, st)).join("<br/>")}</blockquote>`;
+    }
     case "table": {
       const cellPad = "padding:5pt 8pt;";
+      const headerAlign = st.table.headerAlign || "left";
       const th = block.headers
-        .map((c) => `<th style="${cellPad}background:${st.table.headerBg};color:${st.table.headerColor};border:1px solid ${st.table.borderColor};text-align:left;font-weight:bold;">${inlineHtml(c, st)}</th>`)
+        .map((c) => `<th style="${cellPad}background:${st.table.headerBg};color:${st.table.headerColor};border:1px solid ${st.table.borderColor};text-align:${headerAlign};font-weight:bold;">${inlineHtml(c, st)}</th>`)
         .join("");
       const trs = block.rows
         .map((r, ri) => {
@@ -108,7 +126,6 @@ export function blockToHtml(block, st, opts = {}) {
       return `<table style="border-collapse:collapse;width:100%;margin:10pt 0;${baseStyle(st)}"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
     }
     case "html":
-      // Raw HTML block — pass through verbatim (supports <div align>, <img>, <table>, badges, etc.)
       return `<div style="margin:8pt 0;">${block.raw}</div>`;
     case "list":
       return listHtml(block, st);
