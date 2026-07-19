@@ -31,6 +31,8 @@ Visit the website at [md2docs.cybertechmind.com](https://md2docs.cybertechmind.c
    - Choose a layout/color template that matches your document style.
    - Click **Save as Word (.docx)** or **Save as PDF** to export your document.
 
+[![Md2Docs Customization & Docx Export](https://raw.githubusercontent.com/moovendhan-v/md2Docs/refs/heads/main/vscode-extension/assets/banner3.png)](https://md2docs.cybertechmind.com)
+
 ---
 
 ## ⚡ Extension Commands
