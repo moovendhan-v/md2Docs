@@ -38,21 +38,34 @@ function blobToDataUrl(blob) {
  * Returns null if both approaches fail.
  */
 async function fetchAsDataUrl(url) {
-  // ── approach 1: fetch API ──────────────────────────────────────────────────
+  // ── approach 1: direct fetch ───────────────────────────────────────────────
   try {
     const res = await fetch(url, { mode: "cors", credentials: "omit", cache: "force-cache" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     if (blob.size === 0) throw new Error("empty blob");
     const dataUrl = await blobToDataUrl(blob);
-    // Verify the result looks like a real image data URL
     if (dataUrl.startsWith("data:image/") || dataUrl.startsWith("data:application/octet-stream")) {
       return dataUrl;
     }
     throw new Error("unexpected mime");
-  } catch { /* fall through */ }
+  } catch { /* fall through to proxy */ }
 
-  // ── approach 2: load via HTMLImageElement → canvas ─────────────────────────
+  // ── approach 2: weserv CORS proxy (bypasses CORS restrictions) ──────────────
+  try {
+    const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxiedUrl, { mode: "cors", cache: "force-cache" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    if (blob.size === 0) throw new Error("empty blob");
+    const dataUrl = await blobToDataUrl(blob);
+    if (dataUrl.startsWith("data:image/") || dataUrl.startsWith("data:application/octet-stream")) {
+      return dataUrl;
+    }
+    throw new Error("unexpected mime");
+  } catch { /* fall through to image element */ }
+
+  // ── approach 3: load via HTMLImageElement → canvas ─────────────────────────
   try {
     return await new Promise((resolve) => {
       const img = new Image();

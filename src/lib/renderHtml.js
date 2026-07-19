@@ -131,7 +131,7 @@ export function blockToHtml(block, st, opts = {}, overrides = {}) {
       const bqBorderWidth = st.blockquote.borderWidth || 3;
       const bqBg = st.blockquote.bg && st.blockquote.bg !== "transparent"
         ? `background:${st.blockquote.bg};padding:4pt 12pt;`
-        : "padding:2pt 0 2pt 12pt;";
+        : "background:transparent;padding:2pt 0 2pt 12pt;";
       const base = `border-left:${bqBorderWidth}px solid ${st.blockquote.borderColor};margin:10pt 0;${bqBg}color:${st.blockquote.color};${st.blockquote.italic ? "font-style:italic;" : ""}`;
       const style = mergeStyle(base, ov);
       return `<blockquote${eidAttr} style="${style}">${block.lines.map((l) => inlineHtml(l, st)).join("<br/>")}</blockquote>`;
