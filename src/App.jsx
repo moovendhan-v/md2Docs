@@ -10,6 +10,8 @@ import TemplatesDialog from "@/components/TemplatesDialog";
 import TemplateGallery from "@/components/TemplateGallery";
 import CustomizePanel from "@/components/CustomizePanel";
 import LandingPage from "@/components/LandingPage";
+import MarkdownEditor from "@/components/MarkdownEditor";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -463,16 +465,17 @@ export default function App() {
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80 text-primary" onClick={() => insertMarkdown("hr")} title="Page break"><Split className="h-3.5 w-3.5" /></Button>
           </div>
 
-          {/* Textarea */}
-          <Textarea
-            id="md-textarea"
-            value={markdown}
-            onChange={(e) => setMarkdown(e.target.value)}
-            onKeyDown={handleKeyDown}
-            spellCheck={false}
-            className="flex-1 resize-none rounded-none border-0 bg-background p-4 font-mono text-[13px] leading-relaxed focus-visible:ring-0 placeholder:text-muted-foreground/50 focus:outline-none"
-            placeholder="# Paste your markdown here…"
-          />
+          {/* Syntax-Highlighted Markdown Editor */}
+          <div className="flex-1 min-h-0 relative">
+            <MarkdownEditor
+              id="md-textarea"
+              value={markdown}
+              onChange={(e) => setMarkdown(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="# Paste your markdown here…"
+            />
+          </div>
+
 
           {/* Stats footer */}
           <div className="flex items-center justify-between border-t bg-muted/20 px-3 py-1.5 text-[10px] text-muted-foreground/80 font-medium select-none shrink-0">

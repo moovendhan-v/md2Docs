@@ -200,9 +200,7 @@ export default function PagedPreview({ html }) {
 
   const pageNumAlignStyle = { left: "flex-start", center: "center", right: "flex-end" }[pageNumAlign] || "center";
 
-  const pageBorderCss = borderStyle !== "none"
-    ? { outline: `${borderWidth}px ${borderStyle} ${borderColor}`, outlineOffset: `-${borderInset}px` }
-    : {};
+
 
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", width: "100%", height: "100%", minHeight: 0, minWidth: 0, overflow: "hidden" }} className="bg-canvas transition-colors">
@@ -292,9 +290,25 @@ export default function PagedPreview({ html }) {
                     boxSizing: "border-box", overflow: "hidden",
                     background: styles.page.bg || "#ffffff",
                     position: "relative",
-                    ...pageBorderCss,
                   }}
                 >
+                  {/* Restricted page border box */}
+                  {borderStyle !== "none" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: `${borderInset}px`,
+                        left: `${borderInset}px`,
+                        right: `${borderInset}px`,
+                        bottom: showPageNumbers
+                          ? `${Math.max(geom.marginY - 8, borderInset + 16)}px`
+                          : `${borderInset}px`,
+                        border: `${borderWidth}px ${borderStyle} ${borderColor}`,
+                        pointerEvents: "none",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  )}
                   {/* Content — interactive for click-to-inspect */}
                   <div
                     className="preview-interactive"

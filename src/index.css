@@ -102,3 +102,34 @@
 .preview-interactive blockquote:hover { outline-color: rgba(217,119,6,0.55) !important; }
 .preview-interactive a:hover    { outline-color: rgba(14,165,233,0.55) !important; }
 .preview-interactive img:hover  { outline-color: rgba(148,163,184,0.55) !important; }
+
+/* ── Editor Markdown Syntax Highlighting ──────────────────────────────────── */
+
+.md-heading {
+  @apply text-primary font-bold;
+}
+.md-blockquote {
+  @apply text-amber-600 dark:text-amber-400 italic;
+}
+.md-code-block {
+  @apply text-purple-600 dark:text-purple-400 bg-muted/40 px-1 rounded;
+}
+.md-inline-code {
+  @apply text-rose-600 dark:text-rose-400 bg-muted/65 px-1 rounded font-semibold;
+}
+.md-list-marker {
+  @apply text-emerald-600 dark:text-emerald-400 font-bold;
+}
+.md-link {
+  @apply text-sky-600 dark:text-sky-400 underline;
+}
+.md-image {
+  @apply text-pink-600 dark:text-pink-400;
+}
+.md-html-tag {
+  @apply text-orange-600 dark:text-orange-400;
+}
+.md-hr {
+  @apply text-muted-foreground font-bold tracking-widest;
+}
+

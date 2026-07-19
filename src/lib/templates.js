@@ -408,7 +408,14 @@ export const DEFAULT_MD = `# Moovendhan V | Backend & DevOps Cloud Engineer
 
 ![Profile Photo](https://github.com/user-attachments/assets/cd49f32c-6d44-418e-b7de-f26b5b78b55c)
 
-![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonaws&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+
+<div align="center">
+
+![Profile Photo](https://skillicons.dev/icons?i=html,css,js,ts,react,nextjs,tailwind,bootstrap,nodejs,nestjs,express,py,fastapi,php,mysql,postgres,mongodb,redis,sqlite,graphql,prisma,firebase,aws,docker,kubernetes,terraform,jenkins,githubactions,git,github,linux,ubuntu,nginx,vscode,postman,bash&perline=12)
+
+</div>
+
+
 
 Highly motivated **Backend & DevOps Engineer** with 2+ years of experience building scalable APIs, microservices, and cloud-native AWS infrastructure in production environments. Proficient in designing resilient, secure, and cost-optimized cloud architectures.
 
