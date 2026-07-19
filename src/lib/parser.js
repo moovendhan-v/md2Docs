@@ -148,13 +148,24 @@ export function parseMarkdown(md) {
     if (line.includes("|") && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])) {
       const parseRow = (l) => l.trim().replace(/^\||\|$/g, "").split("|").map((c) => parseInline(c.trim()));
       const headers = parseRow(line);
+
+      // Parse alignments from separator row (e.g. :---:)
+      const alignRow = lines[i + 1].trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+      const alignments = alignRow.map((col) => {
+        const left = col.startsWith(":");
+        const right = col.endsWith(":");
+        if (left && right) return "center";
+        if (right) return "right";
+        return "left";
+      });
+
       i += 2;
       const rows = [];
       while (i < lines.length && lines[i].includes("|") && lines[i].trim() !== "") {
         rows.push(parseRow(lines[i]));
         i++;
       }
-      blocks.push({ type: "table", headers, rows });
+      blocks.push({ type: "table", headers, rows, alignments });
       continue;
     }
 

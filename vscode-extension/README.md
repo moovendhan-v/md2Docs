@@ -52,6 +52,14 @@ Md2Docs registers the following commands in VS Code:
 
 ---
 
+## 🌐 Web Dashboard App
+
+Prefer using a web interface? Access the same rendering engine, templates, and styling tools via the web application:
+
+[![Md2Docs Web Dashboard](https://raw.githubusercontent.com/moovendhan-v/md2Docs/refs/heads/main/vscode-extension/assets/website_banner.png)](https://md2docs.cybertechmind.com)
+
+---
+
 ### 🌐 Learn More & Links
 
 - **Extension Homepage & App**: [md2docs.cybertechmind.com](https://md2docs.cybertechmind.com)
