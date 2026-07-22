@@ -102,12 +102,132 @@ function mergeStyle(base, override) {
   return filtered + ";" + override;
 }
 
+/* ── Word-style Table of Contents renderer ───────────────────────────────── */
+
+/**
+ * Build a complete Word-style TOC HTML string.
+ * @param {Array}  headings      - filtered array of heading blocks (type=="heading")
+ * @param {Object} st            - styles object
+ * @param {Object} tocOptions    - { title, style, maxDepth }
+ * @param {Object} pageMap       - { [headingId]: pageNumber } — may be empty on first pass
+ * @param {String} eidAttr       - data-eid attribute for the element inspector
+ */
+export function buildTocHtml(headings, st, tocOptions = {}, pageMap = {}, eidAttr = "") {
+  const title     = tocOptions.title    ?? "Table of Contents";
+  const style     = tocOptions.style    ?? "dotted";  // "dotted" | "lines" | "plain"
+  const maxDepth  = tocOptions.maxDepth ?? 3;
+
+  const fontFam   = st.page.fontFamily;
+  const bodySize  = st.page.fontSize;
+  const textColor = st.page.textColor;
+  const accentColor = st.heading.color || st.title.color;
+
+  // TOC container background — slightly tinted
+  const tocEntries = headings.filter((h) => !h.isTitle && h.level <= maxDepth);
+
+  if (tocEntries.length === 0) return "";
+
+  // Title bar
+  const titleHtml = `<div style="
+    font-family:${fontFam};
+    font-size:${bodySize + 4}pt;
+    font-weight:bold;
+    color:${accentColor};
+    margin:0 0 10pt 0;
+    padding-bottom:6pt;
+    border-bottom:2px solid ${accentColor};
+    letter-spacing:0.02em;
+  ">${esc(title)}</div>`;
+
+  // Build each entry row
+  const entryRows = tocEntries.map((h) => {
+    const depth   = h.level - 2;   // H2 = depth 0, H3 = depth 1, H4 = depth 2
+    const indent  = Math.max(0, depth) * 16;  // 16pt per level
+    const isBold  = h.level === 2;
+    const fontSize = Math.max(bodySize - 0.5, 9);
+
+    // Extract plain text from inline tokens
+    const text = (h.inline || []).map((r) => r.text || "").join("");
+    const page = pageMap[h.id] ? String(pageMap[h.id]) : "";
+
+    // Leader styles per TOC style option
+    let leaderStyle = "";
+    if (style === "dotted") {
+      leaderStyle = `flex:1;
+        height:0;
+        border-bottom:1px dotted ${textColor};
+        opacity:0.45;
+        margin:0 5pt;
+        position:relative;
+        top:-3px;
+        min-width:20pt;`;
+    } else if (style === "lines") {
+      leaderStyle = `flex:1;
+        height:0;
+        border-bottom:1px solid ${textColor};
+        opacity:0.18;
+        margin:0 5pt;
+        position:relative;
+        top:-3px;
+        min-width:20pt;`;
+    } else {
+      // plain — just a spacer
+      leaderStyle = `flex:1; min-width:8pt;`;
+    }
+
+    return `<a href="#${h.id}" style="
+      display:flex;
+      align-items:baseline;
+      margin:${isBold ? "5pt" : "2.5pt"} 0;
+      padding-left:${indent}pt;
+      font-family:${fontFam};
+      font-size:${fontSize}pt;
+      color:${textColor};
+      text-decoration:none;
+    ">
+      <span style="
+        flex-shrink:0;
+        font-weight:${isBold ? "bold" : "normal"};
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        max-width:75%;
+      ">${esc(text)}</span>
+      <span style="${leaderStyle}"></span>
+      <span style="
+        flex-shrink:0;
+        font-weight:${isBold ? "bold" : "normal"};
+        min-width:16pt;
+        text-align:right;
+        color:${textColor};
+        opacity:${page ? "1" : "0.35"};
+      ">${page || "—"}</span>
+    </a>`;
+  }).join("\n");
+
+  return `<div data-toc="true"${eidAttr} style="
+    font-family:${fontFam};
+    margin:0 0 18pt 0;
+    padding:14pt 16pt;
+    background:rgba(128,128,128,0.04);
+    border-left:3px solid ${accentColor};
+    border-radius:0 4px 4px 0;
+    page-break-inside:avoid;
+  ">${titleHtml}${entryRows}</div>`;
+}
+
+
 export function blockToHtml(block, st, opts = {}, overrides = {}) {
   const eid = block._eid ?? "";
   const eidAttr = eid !== "" ? ` data-eid="${eid}"` : "";
   const ov = overrides[eid] || "";  // extra inline CSS for this specific element
 
   switch (block.type) {
+    case "toc": {
+      // TOC rendered via buildTocHtml, called from blocksToHtml with heading context
+      // This placeholder is replaced by the full TOC in blocksToHtml
+      return `<div data-toc-placeholder="true"${eidAttr}></div>`;
+    }
     case "heading": {
       const base = headingStyle(block, st);
       const style = mergeStyle(base, ov);
@@ -185,7 +305,28 @@ export function blockToHtml(block, st, opts = {}, overrides = {}) {
 }
 
 export function blocksToHtml(blocks, st, opts = {}, overrides = {}) {
-  return blocks
-    .map((b, i) => blockToHtml({ ...b, _eid: i }, st, opts, overrides))
-    .join("\n");
+  // Collect all heading blocks for TOC generation
+  const headings = blocks.filter((b) => b.type === "heading");
+  const pageMap  = opts.pageMap  || {};
+  const tocOpts  = opts.tocOptions || {};
+
+  // Decide whether to auto-prepend TOC at the top
+  const hasTocMarker   = blocks.some((b) => b.type === "toc");
+  const insertAtTop    = !hasTocMarker && tocOpts.enabled && tocOpts.insertAtTop;
+
+  let blocksToRender = blocks;
+  if (insertAtTop) {
+    blocksToRender = [{ type: "toc" }, ...blocks];
+  }
+
+  const parts = blocksToRender.map((b, i) => {
+    if (b.type === "toc") {
+      // Only render if TOC is enabled (either by marker or by panel toggle)
+      if (!tocOpts.enabled && !hasTocMarker) return "";
+      return buildTocHtml(headings, st, tocOpts, pageMap, ` data-eid="${i}"`);
+    }
+    return blockToHtml({ ...b, _eid: i }, st, opts, overrides);
+  });
+
+  return parts.join("\n");
 }

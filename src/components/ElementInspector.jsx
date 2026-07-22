@@ -28,9 +28,11 @@ const TYPE_META = {
   blockquote: { label: "Blockquote",       icon: Quote,         color: "#d97706" },
   link:       { label: "Link",             icon: Link2,         color: "#0ea5e9" },
   image:      { label: "Image / Badge",    icon: ImageIcon,     color: "#94a3b8" },
+  toc:        { label: "Table of Contents", icon: List,          color: "#8b5cf6" },
   hr:         { label: "Divider",          icon: MousePointer2, color: "#94a3b8" },
   page:       { label: "Page / Document",  icon: FileText,      color: "#94a3b8" },
 };
+
 
 // ── CSS fragment helpers ──────────────────────────────────────────────────────
 // We store per-element overrides as CSS strings, e.g. "color:#f00;font-size:16pt;"
@@ -286,6 +288,15 @@ function ImageInfo() {
   );
 }
 
+function TocInfo() {
+  return (
+    <p className="text-xs text-muted-foreground/80 py-2 leading-relaxed">
+      The Table of Contents appearance is controlled globally. Please use the
+      <strong> Table of Contents </strong> section in the <strong>Design Options (Styles)</strong> panel to customize its look, depth, and leader style.
+    </p>
+  );
+}
+
 // ── main inspector component ──────────────────────────────────────────────────
 
 export default function ElementInspector({ open, onOpenChange, elementType, eid }) {
@@ -335,10 +346,12 @@ export default function ElementInspector({ open, onOpenChange, elementType, eid 
       case "blockquote": return <BlockquoteOverride css={cssMap} setCss={setCssField} globalSt={styles} />;
       case "table":      return <TableOverride css={cssMap} setCss={setCssField} globalSt={styles} />;
       case "image":      return <ImageInfo />;
+      case "toc":        return <TocInfo />;
       case "paragraph":
       case "list":
       default:           return <ParagraphOverride css={cssMap} setCss={setCssField} globalSt={styles} />;
     }
+
   };
 
   return (

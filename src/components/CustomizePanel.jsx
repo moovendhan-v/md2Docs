@@ -9,8 +9,9 @@ import {
 } from "@/components/ui/select";
 import {
   RotateCcw, ChevronDown, ChevronRight, FileText, Type, Heading2,
-  Table2, Code2, Quote, Link2, Layout, Hash,
+  Table2, Code2, Quote, Link2, Layout, Hash, List,
 } from "lucide-react";
+
 
 export const FONT_OPTIONS = [
   { label: "Arial", value: "Arial, Helvetica, sans-serif" },
@@ -152,9 +153,24 @@ export default function CustomizePanel() {
   const resetStyles = useDocStore((s) => s.resetStyles);
   const hrPageBreak = useDocStore((s) => s.hrPageBreak);
   const setHrPageBreak = useDocStore((s) => s.setHrPageBreak);
+  const tocOptions = useDocStore((s) => s.tocOptions);
+  const updateTocOption = useDocStore((s) => s.updateTocOption);
+  const markdown = useDocStore((s) => s.markdown);
+  const setMarkdown = useDocStore((s) => s.setMarkdown);
   const st = styles;
 
   const u = (group, key, val) => updateStyle(group, key, val);
+
+  const insertTocMarker = () => {
+    if (markdown.trimStart().startsWith("[TOC]")) return;
+    setMarkdown("[TOC]\n\n" + markdown);
+  };
+
+  const removeTocMarker = () => {
+    setMarkdown(markdown.replace(/^\[TOC\]\s*\n?\n?/i, ""));
+  };
+
+  const hasTocMarker = /^\[TOC\]/im.test(markdown);
 
   return (
     <div className="flex h-full flex-col">
@@ -168,8 +184,82 @@ export default function CustomizePanel() {
 
       <div className="flex-1 overflow-y-auto pr-0.5">
 
+        {/* ── TABLE OF CONTENTS ── */}
+        <Section icon={List} title="Table of Contents" defaultOpen>
+          <ToggleField
+            label="Enable TOC"
+            description="Auto-generates a Word-style TOC from headings"
+            checked={tocOptions.enabled}
+            onChange={(v) => updateTocOption("enabled", v)}
+          />
+          {tocOptions.enabled && (
+            <>
+              {/* Title */}
+              <div className="py-1">
+                <label className="mb-1 block text-xs text-muted-foreground">TOC Title</label>
+                <input
+                  type="text"
+                  value={tocOptions.title}
+                  onChange={(e) => updateTocOption("title", e.target.value)}
+                  className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs outline-none focus:ring-1 focus:ring-ring"
+                  placeholder="Table of Contents"
+                />
+              </div>
+
+              <SelectField
+                label="Leader style"
+                value={tocOptions.style}
+                options={[
+                  { label: "Dotted  (...........)", value: "dotted" },
+                  { label: "Line  (───────────)", value: "lines" },
+                  { label: "Plain  (no leader)", value: "plain" },
+                ]}
+                onChange={(v) => updateTocOption("style", v)}
+              />
+
+              <SelectField
+                label="Max heading depth"
+                value={String(tocOptions.maxDepth)}
+                options={[
+                  { label: "H2 only (1 level)", value: "2" },
+                  { label: "H2 + H3 (2 levels)", value: "3" },
+                  { label: "H2 + H3 + H4 (3 levels)", value: "4" },
+                ]}
+                onChange={(v) => updateTocOption("maxDepth", parseInt(v, 10))}
+              />
+
+              <Divider />
+
+              <ToggleField
+                label="Auto-insert at top"
+                description="Prepend TOC before the first heading"
+                checked={tocOptions.insertAtTop}
+                onChange={(v) => updateTocOption("insertAtTop", v)}
+              />
+
+              <Divider />
+
+              {/* Insert / Remove marker button */}
+              <div className="flex gap-2 pt-0.5">
+                <Button
+                  variant={hasTocMarker ? "secondary" : "outline"}
+                  size="sm"
+                  className="h-7 flex-1 text-[11px]"
+                  onClick={hasTocMarker ? removeTocMarker : insertTocMarker}
+                >
+                  {hasTocMarker ? "Remove [TOC] marker" : "Insert [TOC] marker"}
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                Or type <code className="bg-muted px-1 rounded">[TOC]</code> anywhere in your markdown
+              </p>
+            </>
+          )}
+        </Section>
+
         {/* ── DOCUMENT ── */}
         <Section icon={FileText} title="Document" defaultOpen>
+
           <FontField label="Body font" value={st.page.fontFamily} onChange={(v) => u("page", "fontFamily", v)} />
           <SliderField label="Body size" value={st.page.fontSize} min={8} max={16} onChange={(v) => u("page", "fontSize", v)} />
           <SliderField label="Line height" value={st.page.lineHeight} min={1} max={2.5} step={0.05} unit="×" onChange={(v) => u("page", "lineHeight", v)} />

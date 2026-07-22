@@ -14,6 +14,15 @@ export const useDocStore = create((set, get) => ({
   hrPageBreak: true,
   canvasLayout: "vertical",  // "vertical" | "horizontal"
 
+  // Table of Contents options
+  tocOptions: {
+    enabled: false,       // show TOC (also triggered by [TOC] marker)
+    title: "Table of Contents",
+    style: "dotted",      // "dotted" | "lines" | "plain"
+    maxDepth: 3,          // 1 | 2 | 3
+    insertAtTop: false,   // auto-prepend TOC before first heading
+  },
+
   setMarkdown: (markdown) => set({ markdown }),
   setFileName: (fileName) => set({ fileName }),
   setPages: (pages) => set({ pages }),
@@ -40,4 +49,9 @@ export const useDocStore = create((set, get) => ({
       delete next[eid];
       return { elementOverrides: next };
     }),
+
+  updateTocOption: (key, value) =>
+    set((state) => ({
+      tocOptions: { ...state.tocOptions, [key]: value },
+    })),
 }));

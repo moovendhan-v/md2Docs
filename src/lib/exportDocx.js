@@ -125,7 +125,29 @@ export async function exportDocx(blocks, st, fileName, opts = {}) {
 
   for (const b of blocks) {
     switch (b.type) {
+      case "toc": {
+        // Render a text-based TOC for Word export (Word will know how to format it)
+        const tocHeadings = blocks.filter((h) => h.type === "heading" && !h.isTitle);
+        if (tocHeadings.length > 0) {
+          children.push(new Paragraph({
+            spacing: { after: 80 },
+            children: [new TextRun({ text: "Table of Contents", font: bodyFont, size: half(st.heading.fontSize), color: hex(st.heading.color), bold: true })],
+          }));
+          for (const h of tocHeadings) {
+            const depth = Math.max(0, h.level - 2);
+            const text = (h.inline || []).map((r) => r.text || "").join("");
+            children.push(new Paragraph({
+              indent: { left: depth * 360 },
+              spacing: { after: 40 },
+              children: [new TextRun({ text, font: bodyFont, size: bodySize, color: bodyColor, bold: h.level === 2 })],
+            }));
+          }
+          children.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
+        }
+        break;
+      }
       case "heading": {
+
         // bookmark the heading so #anchor links can jump to it
         const mk = (opts) => [new Bookmark({ id: b.id, children: runs(b.inline, st, opts) })];
         if (b.isTitle) {

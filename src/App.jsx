@@ -45,6 +45,8 @@ export default function App() {
   const hrPageBreak = useDocStore((s) => s.hrPageBreak);
   const dark = useDocStore((s) => s.dark);
   const setDark = useDocStore((s) => s.setDark);
+  const tocOptions = useDocStore((s) => s.tocOptions);
+  const pages = useDocStore((s) => s.pages);
 
   const [view, setView] = useState(() => {
     return window.location.pathname === "/dashboard" ? "editor" : "landing";
@@ -142,9 +144,27 @@ export default function App() {
   }, [setDark]);
 
   const blocks = useMemo(() => parseMarkdown(markdown), [markdown]);
+
+  // Build heading→page map from paginated HTML (two-pass: updates after paginator runs)
+  const headingPageMap = useMemo(() => {
+    const map = {};
+    if (!pages || pages.length === 0) return map;
+    const parser = new DOMParser();
+    pages.forEach((pageHtml, idx) => {
+      const doc = parser.parseFromString(`<body>${pageHtml}</body>`, "text/html");
+      doc.querySelectorAll("[id]").forEach((el) => {
+        const tag = el.tagName.toLowerCase();
+        if (/^h[1-6]$/.test(tag)) {
+          map[el.id] = idx + 1;
+        }
+      });
+    });
+    return map;
+  }, [pages]);
+
   const html = useMemo(
-    () => blocksToHtml(blocks, styles, { hrPageBreak }, elementOverrides),
-    [blocks, styles, hrPageBreak, elementOverrides]
+    () => blocksToHtml(blocks, styles, { hrPageBreak, pageMap: headingPageMap, tocOptions }, elementOverrides),
+    [blocks, styles, hrPageBreak, elementOverrides, headingPageMap, tocOptions]
   );
 
 
