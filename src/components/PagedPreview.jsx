@@ -49,6 +49,11 @@ function detectElementInfo(target) {
     if (tag === "a")   return { type: "link",  eid: findBlockEid(el) };
     if (tag === "img") return { type: "image", eid: findBlockEid(el) };
 
+    if (tag === "div" && el.getAttribute?.("data-toc") === "true") {
+      return { type: "toc", eid: findBlockEid(el) };
+    }
+
+
     // Stop at wrapper div
     if (tag === "div" && el.classList?.contains("preview-interactive")) break;
     el = el.parentElement;

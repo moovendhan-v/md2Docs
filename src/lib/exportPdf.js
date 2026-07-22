@@ -140,6 +140,16 @@ export async function renderPdf(pages, styles) {
     const pw  = pdf.internal.pageSize.getWidth();
     const ph  = pdf.internal.pageSize.getHeight();
 
+    // Pre-pass: map element IDs (headings/anchors) to their 1-based page number
+    const idToPage = {};
+    const parser = new DOMParser();
+    pages.forEach((html, i) => {
+      const doc = parser.parseFromString(`<body>${html}</body>`, "text/html");
+      doc.querySelectorAll("[id]").forEach((el) => {
+        idToPage[el.id] = i + 1;
+      });
+    });
+
     const showPageNumbers = styles.page.showPageNumbers !== false;
     const pageNumAlign    = styles.page.pageNumberAlign  || "center";
     const pageNumFormat   = styles.page.pageNumberFormat || "Page X of Y";
@@ -231,6 +241,38 @@ export async function renderPdf(pages, styles) {
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       if (i > 0) pdf.addPage();
       pdf.addImage(imgData, "JPEG", 0, 0, pw, ph);
+
+      // Map interactive links from the DOM onto the PDF image
+      const pageRect = pageEl.getBoundingClientRect();
+      const scaleX = pw / pageRect.width;
+      const scaleY = ph / pageRect.height;
+      const links = pageEl.querySelectorAll("a[href]");
+
+      for (const link of links) {
+        const hrefAttr = link.getAttribute("href");
+        if (!hrefAttr) continue;
+        
+        const rect = link.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+
+        const x = (rect.left - pageRect.left) * scaleX;
+        const y = (rect.top - pageRect.top) * scaleY;
+        const w = rect.width * scaleX;
+        const h = rect.height * scaleY;
+
+        if (hrefAttr.startsWith("#")) {
+          // Internal link (e.g. TOC jump)
+          const targetId = hrefAttr.substring(1);
+          const targetPage = idToPage[targetId];
+          if (targetPage) {
+            pdf.link(x, y, w, h, { pageNumber: targetPage });
+          }
+        } else {
+          // External link
+          pdf.link(x, y, w, h, { url: link.href });
+        }
+      }
+
       host.removeChild(pageEl);
     }
 

@@ -76,6 +76,13 @@ export function parseMarkdown(md) {
     }
     lastWasEmpty = false;
 
+    // Table of Contents marker: [TOC] or [[toc]]
+    if (/^\[\[?[Tt][Oo][Cc]\]?\]$/.test(line.trim())) {
+      blocks.push({ type: "toc" });
+      i++;
+      continue;
+    }
+
     // ── raw HTML block ──────────────────────────────────────────────────────
     // Collect consecutive lines that are part of an HTML block.
     // We detect: opening <tag or </tag at the start of the trimmed line.
