@@ -107,3 +107,35 @@ const md2Docs = {
 
 *Generated dynamically using MD → Docs.*
 *md2docs.cybertechmind.com*
+
+## CLI Tool
+
+`md2Docs` now includes a command-line interface, allowing you to convert Markdown to styled Word documents directly from your terminal!
+
+```bash
+# Convert a markdown file to Word
+npx md2docs input.md -o output.docx
+
+# Use a specific template (e.g., modern, elegant, technical)
+npx md2docs input.md -t modern -o output.docx
+```
+
+## Claude MCP Connector
+
+You can integrate `md2Docs` directly into your AI workflows (like Claude Desktop) using the built-in MCP server!
+
+1. Edit your Claude Desktop configuration file (e.g. `claude_desktop_config.json`)
+2. Add the `md2docs` server to your `mcpServers` configuration:
+
+```json
+{
+  "mcpServers": {
+    "md2docs": {
+      "command": "npx",
+      "args": ["md2docs-mcp"]
+    }
+  }
+}
+```
+
+Now Claude can automatically convert its markdown output into perfectly formatted Word documents for you!
