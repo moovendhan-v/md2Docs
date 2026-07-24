@@ -4,6 +4,8 @@ import { TEMPLATES } from "@/lib/templates";
 import { parseMarkdown } from "@/lib/parser";
 import { blocksToHtml } from "@/lib/renderHtml";
 import { exportDocx } from "@/lib/exportDocx";
+import { Packer } from "docx";
+
 import PagedPreview from "@/components/PagedPreview";
 import PdfDialog from "@/components/PdfDialog";
 import TemplatesDialog from "@/components/TemplatesDialog";
@@ -440,7 +442,17 @@ export default function App() {
               if (vscode) {
                 vscode.postMessage({ type: 'exportDocx', styles, options: { hrPageBreak, showPageNumbers: true } });
               } else {
-                exportDocx(blocks, styles, fileName, { hrPageBreak });
+                exportDocx(blocks, styles, fileName, { hrPageBreak }).then(async (doc) => {
+                  const blob = await Packer.toBlob(doc);
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${fileName}.docx`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 2000);
+                });
               }
             }}
           >

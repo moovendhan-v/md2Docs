@@ -10,8 +10,8 @@ import {
   WidthType, BorderStyle, AlignmentType, ExternalHyperlink, InternalHyperlink,
   Bookmark, LevelFormat, Footer, PageNumber, PageBreak, ImageRun,
 } from "docx";
-import { codeFontSize } from "./parser";
-import { renderMermaidSvg } from "./mermaid";
+import { codeFontSize } from "./parser.js";
+import { renderMermaidSvg } from "./mermaid.js";
 
 const hex = (c) => (c || "#000000").replace("#", "").toUpperCase();
 const half = (pt) => Math.round(pt * 2); // docx font sizes are half-points
@@ -349,13 +349,5 @@ export async function exportDocx(blocks, st, fileName, opts = {}) {
     }],
   });
 
-  const blob = await Packer.toBlob(doc);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${fileName}.docx`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  return doc;
 }
