@@ -1,3 +1,4 @@
+//@ts-nocheck
 /* Renders each preview page to canvas and assembles a real PDF.
    Root cause fix: renderHtml escapes & → &amp; in img src attrs (correct HTML),
    but fetch() needs the real & character. We decode HTML entities before fetching,

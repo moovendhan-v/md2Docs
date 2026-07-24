@@ -10,8 +10,8 @@ import {
   WidthType, BorderStyle, AlignmentType, ExternalHyperlink, InternalHyperlink,
   Bookmark, LevelFormat, Footer, PageNumber, PageBreak, ImageRun,
 } from "docx";
-import { codeFontSize } from "./parser.js";
-import { renderMermaidSvg } from "./mermaid.js";
+import { codeFontSize } from "./parser";
+import { renderMermaidSvg } from "./mermaid";
 
 const hex = (c) => (c || "#000000").replace("#", "").toUpperCase();
 const half = (pt) => Math.round(pt * 2); // docx font sizes are half-points

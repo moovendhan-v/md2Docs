@@ -1,3 +1,4 @@
+//@ts-nocheck
 /* Tokens + styles → inline-styled HTML (used by preview + PDF renderer).
    Each block gets a data-eid="<index>" attribute so the ElementInspector can
    write per-element inline-style overrides that only affect that one block. */

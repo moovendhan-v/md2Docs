@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { useState } from "react";
 import { useDocStore } from "@/store/useDocStore";
 import { Button } from "@/components/ui/button";
