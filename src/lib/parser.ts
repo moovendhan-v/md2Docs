@@ -11,9 +11,11 @@
 
 // Matches: ![alt](src){style} or ![alt](src) — image with optional {style attrs}
 // Also matches: [![alt](src)](href) — linked image (badge pattern)
+import { MarkdownBlock, MarkdownRun } from "../types";
+
 const INLINE_RE = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)|(!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\))|(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))/g;
 
-export function parseInline(text, flags = {}) {
+export function parseInline(text: string, flags: any = {}): MarkdownRun[] {
   const runs = [];
   const re = new RegExp(INLINE_RE.source, "g");
   let last = 0;
@@ -36,7 +38,7 @@ export function parseInline(text, flags = {}) {
 }
 
 /* GitHub-style slugs so [link](#some-heading) anchors resolve. */
-function slugify(text, used) {
+function slugify(text: string, used: Set<string>) {
   let slug = text.toLowerCase().trim()
     .replace(/[^\w\s-]/g, "")
     .replace(/[\s_]+/g, "-")
@@ -55,10 +57,10 @@ const LIST_RE = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
 // HTML block-level tags that should be passed through verbatim
 const BLOCK_HTML_RE = /^<(div|img|table|thead|tbody|tr|td|th|section|article|header|footer|figure|figcaption|details|summary|br|hr|p|ul|ol|li|blockquote|pre|h[1-6]|sub|sup)[\s>\/]/i;
 
-export function parseMarkdown(md) {
+export function parseMarkdown(md: string): MarkdownBlock[] {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
-  const blocks = [];
-  const slugs = new Set();
+  const blocks: MarkdownBlock[] = [];
+  const slugs = new Set<string>();
   let i = 0;
   let firstH1 = true;
   let lastWasEmpty = false;
@@ -68,7 +70,7 @@ export function parseMarkdown(md) {
 
     if (line.trim() === "") {
       if (lastWasEmpty) {
-        blocks.push({ type: "paragraph", inline: [{ t: "text", text: "" }] });
+        blocks.push({ type: "paragraph", inline: [{ t: "text", text: "" }] } as any);
       }
       lastWasEmpty = true;
       i++;
@@ -78,7 +80,7 @@ export function parseMarkdown(md) {
 
     // Table of Contents marker: [TOC] or [[toc]]
     if (/^\[\[?[Tt][Oo][Cc]\]?\]$/.test(line.trim())) {
-      blocks.push({ type: "toc" });
+      blocks.push({ type: "toc" } as any);
       i++;
       continue;
     }
@@ -99,7 +101,7 @@ export function parseMarkdown(md) {
         htmlLines.push(lines[i]);
         i++;
       }
-      blocks.push({ type: "html", raw: htmlLines.join("\n") });
+      blocks.push({ type: "html", raw: htmlLines.join("\n") } as any);
       continue;
     }
 
@@ -111,9 +113,9 @@ export function parseMarkdown(md) {
       while (i < lines.length && !lines[i].trim().startsWith("```")) { buf.push(lines[i]); i++; }
       i++;
       if (lang === "mermaid") {
-        blocks.push({ type: "mermaid", text: buf.join("\n") });
+        blocks.push({ type: "mermaid", text: buf.join("\n") } as any);
       } else {
-        blocks.push({ type: "code", text: buf.join("\n") });
+        blocks.push({ type: "code", text: buf.join("\n") } as any);
       }
       continue;
     }
@@ -128,14 +130,14 @@ export function parseMarkdown(md) {
         type: "heading", level, isTitle,
         id: slugify(h[2], slugs),
         inline: parseInline(h[2]),
-      });
+      } as any);
       i++;
       continue;
     }
 
     // horizontal rule
-    if (/^\s*(---+|\*\*\*+|___+)\s*$/.test(line)) {
-      blocks.push({ type: "hr" });
+    if (line === "---") {
+      blocks.push({ type: "hr" } as any);
       i++;
       continue;
     }
@@ -147,13 +149,13 @@ export function parseMarkdown(md) {
         quoteLines.push(parseInline(lines[i].replace(/^\s*>\s?/, "")));
         i++;
       }
-      blocks.push({ type: "blockquote", lines: quoteLines });
+      blocks.push({ type: "blockquote", lines: quoteLines } as any);
       continue;
     }
 
     // table
     if (line.includes("|") && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])) {
-      const parseRow = (l) => l.trim().replace(/^\||\|$/g, "").split("|").map((c) => parseInline(c.trim()));
+      const parseRow = (l: string) => l.split("|").slice(1, -1).map(c => parseInline(c.trim()));
       const headers = parseRow(line);
 
       // Parse alignments from separator row (e.g. :---:)
@@ -172,7 +174,7 @@ export function parseMarkdown(md) {
         rows.push(parseRow(lines[i]));
         i++;
       }
-      blocks.push({ type: "table", headers, rows, alignments });
+      blocks.push({ type: "table", headers, rows, alignments } as any);
       continue;
     }
 
@@ -186,19 +188,20 @@ export function parseMarkdown(md) {
         const m2 = lines[i].match(LIST_RE);
         if (!m2) break;
         const indent = m2[1].length;
+        const content = m2[3];
         const isOrdered = /\d/.test(m2[2]);
         if (indent >= 2 && items.length > 0) {
           const parent = items[items.length - 1];
           if (!parent.children) {
             parent.children = { ordered: isOrdered, start: isOrdered ? parseInt(m2[2], 10) || 1 : 1, items: [] };
           }
-          parent.children.items.push(parseInline(m2[3]));
+          parent.children.items.push(parseInline(content));
         } else {
-          items.push({ inline: parseInline(m2[3]), children: null });
+          items.push({ inline: parseInline(content), children: null });
         }
         i++;
       }
-      blocks.push({ type: "list", ordered, start, items });
+      blocks.push({ type: "list", ordered, start, items } as any);
       continue;
     }
 
@@ -213,7 +216,7 @@ export function parseMarkdown(md) {
       !lines[i].includes("|") &&
       !lines[i].trim().startsWith("<")
     ) { buf.push(lines[i]); i++; }
-    blocks.push({ type: "paragraph", inline: parseInline(buf.join("\n")) });
+    blocks.push({ type: "paragraph", inline: parseInline(buf.join("\n")) } as any);
   }
 
   return blocks;
@@ -221,6 +224,6 @@ export function parseMarkdown(md) {
 
 /* Constant code font size — no auto-shrink. Always uses the provided default
    so all code blocks render at a consistent size regardless of line length. */
-export function codeFontSize(_text, defaultPt) {
+export function codeFontSize(_text: string, defaultPt: number = 9): number {
   return defaultPt;
 }

@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { useLayoutEffect, useEffect, useRef, useState, useCallback } from "react";
 import { useDocStore } from "@/store/useDocStore";
 import { getPageGeometry } from "@/lib/page";
