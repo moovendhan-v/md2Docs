@@ -1,6 +1,5 @@
 {
   "name": "md-to-docs",
-  "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -11,7 +10,7 @@
   },
   "bin": {
     "md2docs": "./bin/cli.js",
-    "md2docs-mcp": "./bin/mcp.js"
+    "md2docs-mcp": "./bin/connect.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
