@@ -64,7 +64,7 @@ export function createMCPServer(options: { isRemote?: boolean; baseUrl?: string 
         const blocks = parseMarkdown(markdown);
         const template = TEMPLATES[templateId as keyof typeof TEMPLATES] || TEMPLATES.modern;
         
-        const doc = await exportDocx(blocks, template, {});
+        const doc = await exportDocx(blocks, template.styles, fileName, {});
         const buffer = await Packer.toBuffer(doc);
 
         if (isRemote) {

@@ -2,6 +2,12 @@
 import { createServer } from "http";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { createMCPServer } from "../src/mcp/core.js";
+import fs from "fs";
+import path from "path";
+import { parseMarkdown } from "../src/lib/parser.ts";
+import { exportDocx } from "../src/lib/exportDocx.ts";
+import { TEMPLATES } from "../src/lib/templates.ts";
+import { Packer } from "docx";
 
 const PORT = 3001;
 const serverBaseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
@@ -107,6 +113,94 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // OpenAPI Schema Endpoint for ChatGPT
+  if (req.method === "GET" && req.url === "/openapi.json") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    const base = `https://${req.headers.host}`;
+    res.end(JSON.stringify({
+      openapi: "3.1.0",
+      info: { title: "md2Docs API", version: "1.0.0" },
+      servers: [{ url: base }],
+      paths: {
+        "/api/convert/docx": {
+          post: {
+            summary: "Convert Markdown to DOCX",
+            operationId: "convertMarkdownToDocx",
+            requestBody: {
+              required: true,
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      markdown: { type: "string" },
+                      fileName: { type: "string", default: "Document" },
+                      templateId: { type: "string", default: "modern" }
+                    },
+                    required: ["markdown"]
+                  }
+                }
+              }
+            },
+            responses: {
+              "200": {
+                description: "Successful conversion",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        downloadUrl: { type: "string" },
+                        message: { type: "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }));
+    return;
+  }
+
+  // REST Endpoint for ChatGPT to convert DOCX
+  if (req.method === "POST" && req.url === "/api/convert/docx") {
+    let body = "";
+    req.on("data", chunk => { body += chunk.toString(); });
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { markdown, fileName = "Document", templateId = "modern" } = payload;
+        
+        const blocks = parseMarkdown(markdown);
+        const template = TEMPLATES[templateId] || TEMPLATES.modern;
+        const doc = await exportDocx(blocks, template.styles, fileName, {});
+        const buffer = await Packer.toBuffer(doc);
+        
+        const publicDir = path.resolve(process.cwd(), "public");
+        const downloadsDir = path.join(publicDir, "downloads");
+        if (!fs.existsSync(downloadsDir)) fs.mkdirSync(downloadsDir, { recursive: true });
+        
+        const safeFileName = `${fileName.replace(/[^a-z0-9_-]/gi, '_')}_${Date.now()}.docx`;
+        const filePath = path.join(downloadsDir, safeFileName);
+        fs.writeFileSync(filePath, buffer);
+        
+        const base = `https://${req.headers.host}`;
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          downloadUrl: `${base}/downloads/${safeFileName}`,
+          message: "Successfully generated DOCX file!"
+        }));
+      } catch (err) {
+        console.error("Docx conversion error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
 
   // Handle POST message
   if (req.method === "POST" && req.url.split("?")[0] === "/api/mcp") {
