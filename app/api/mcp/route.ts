@@ -1,7 +1,7 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { createMCPServer } from "../../../src/mcp/core";
 
-// We need to keep a global reference to the transport for the POST route to use.
+// Global reference to the transport for the POST route to use.
 (global as any).mcpServer = (global as any).mcpServer || createMCPServer({ isRemote: true, baseUrl: process.env.BASE_URL || "http://localhost:3000" });
 (global as any).mcpTransport = (global as any).mcpTransport || null;
 
@@ -33,7 +33,8 @@ export async function GET(req: Request) {
     },
   };
 
-  const transport = new SSEServerTransport("/api/mcp/message", mockRes as any);
+  // We set the POST endpoint to the EXACT same URL (/api/mcp)
+  const transport = new SSEServerTransport("/api/mcp", mockRes as any);
   (global as any).mcpTransport = transport;
   await (global as any).mcpServer.connect(transport);
 
@@ -43,17 +44,63 @@ export async function GET(req: Request) {
       "Cache-Control": "no-cache",
       "Connection": "keep-alive",
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization"
     },
   });
 }
 
-export async function OPTIONS(req: Request) {
-  return new Response(null, {
+export async function POST(req: Request) {
+  if (!(global as any).mcpTransport) {
+    return new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        error: { code: -32002, message: "No active MCP SSE connection. Please reconnect." }
+      }),
+      { 
+        status: 200, // Return 200 so Claude parses the JSON-RPC error instead of triggering OAuth fallback
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        }
+      }
+    );
+  }
+
+  const body = await req.json();
+
+  const mockReq = { 
+    body,
+    headers: Object.fromEntries(req.headers.entries()),
+    url: req.url,
+    method: req.method,
+    query: {}
+  };
+  const mockRes = {
+    status: (code: number) => mockRes,
+    send: (text: string) => {},
+    end: () => {},
+  };
+
+  await (global as any).mcpTransport.handlePostMessage(mockReq, mockRes);
+  return new Response("Accepted", {
+    status: 202,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    }
+  });
+}
+
+export async function OPTIONS(req: Request) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization"
     },
   });

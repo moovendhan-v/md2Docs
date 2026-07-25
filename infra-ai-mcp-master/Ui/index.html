@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfraAI — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0c0c0b; --surface: #141413; --border: #252521;
+      --text: #e8e8e4; --muted: #7a7a72; --faint: #3a3a36;
+      --acid: #c8f135; 
+    }
+    html, body { height: 100%; font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); }
+    .grid-bg {
+      background-image: linear-gradient(rgba(200,241,53,.035) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(200,241,53,.035) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    #loginScreen {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 0;
+      position: relative; overflow: hidden;
+    }
+    #loginScreen::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(200,241,53,.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 48px; }
+    .login-logo-icon {
+      width: 44px; height: 44px; background: var(--acid); border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-logo-text { font-size: 22px; font-weight: 600; letter-spacing: -.5px; }
+    .login-logo-text span { color: var(--acid); }
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 40px 48px; text-align: center;
+      width: 100%; max-width: 420px; position: relative; z-index: 10;
+    }
+    .login-card h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .login-card p { font-size: 13px; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+    .btn-login {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--acid); color: #0c0c0b; font-weight: 600;
+      font-size: 13px; padding: 12px 28px; border-radius: 10px;
+      border: none; cursor: pointer; transition: all .15s; width: 100%;
+      justify-content: center; font-family: 'IBM Plex Sans', sans-serif;
+    }
+    .btn-login:hover { background: #d8ff4a; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(200,241,53,.2); }
+    .login-footer { margin-top: 24px; font-size: 11px; color: var(--faint); font-family: 'IBM Plex Mono', monospace; }
+  </style>
+</head>
+<body class="grid-bg">
+  <div id="loginScreen">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg width="22" height="22" viewBox="0 0 14 14" fill="none">
+          <rect x="1" y="1" width="5" height="5" fill="#0c0c0b"/>
+          <rect x="8" y="1" width="5" height="5" fill="#0c0c0b"/>
+          <rect x="1" y="8" width="5" height="5" fill="#0c0c0b"/>
+          <rect x="8" y="8" width="5" height="5" fill="#0c0c0b" opacity=".4"/>
+        </svg>
+      </div>
+      <div class="login-logo-text">Infra<span>AI</span></div>
+    </div>
+
+    <div class="login-card">
+      <h1>Management Console</h1>
+      <p>Log in with your AWS Cognito account to access your workspace or the super admin dashboard.</p>
+      <button class="btn-login" id="btnLogin" onclick="cognito.login()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+        </svg>
+        Login with Cognito
+      </button>
+      <p class="login-footer">Secured by AWS Cognito · InfraAI</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+</body>
+</html>

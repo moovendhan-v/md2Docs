@@ -1,0 +1,14 @@
+{
+  "name": "infraai-admin",
+  "version": "1.0.0",
+  "description": "Admin UI for the InfraAI MCP Server API",
+  "main": "bin/cli.js",
+  "bin": {
+    "infraai-admin": "bin/cli.js"
+  },
+  "keywords": ["infraai", "mcp", "admin", "ui"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  }
+}

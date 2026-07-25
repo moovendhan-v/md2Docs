@@ -1,0 +1,50 @@
+# ─── Shared routes snippet ────────────────────────────────────────────────────
+(routes) {
+    handle /authorize* {
+        reverse_proxy infraai-mcp:80
+    }
+    handle /callback* {
+        reverse_proxy infraai-mcp:80
+    }
+    handle /token* {
+        reverse_proxy infraai-mcp:80
+    }
+    handle /register* {
+        reverse_proxy infraai-mcp:80
+    }
+    handle /.well-known/oauth-protected-resource* {
+        reverse_proxy infraai-mcp:80
+    }
+
+    handle /.well-known/oauth-authorization-server* {
+        reverse_proxy infraai-mcp:80
+    }
+    handle /mcp* {
+        reverse_proxy infraai-mcp:80
+    }
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy infraai-api:80
+    }
+    handle /api {
+        uri strip_prefix /api
+        reverse_proxy infraai-api:80
+    }
+    handle {
+        reverse_proxy infraai-frontend:80
+    }
+}
+
+# ─── Production (HTTPS) ───────────────────────────────────────────────────────
+mcp.infraconsulting.com.au {
+    import routes
+}
+
+mcp.infraai.com.au {
+    import routes
+}
+
+# ─── Local (HTTP only) ────────────────────────────────────────────────────────
+http://localhost:80 {
+    import routes
+}
