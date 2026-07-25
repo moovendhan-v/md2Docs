@@ -21,8 +21,10 @@
     "@radix-ui/react-slider": "^1.2.0",
     "@radix-ui/react-switch": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.17",
-    "@types/node": "^26.1.1",
-    "@types/react": "^19.2.17",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "commander": "^14.0.3",
@@ -32,15 +34,18 @@
     "lucide-react": "^0.454.0",
     "mermaid": "^11.16.0",
     "next": "^16.2.11",
+    "postcss": "^8.4.47",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^4.12.1",
     "tailwind-merge": "^2.5.4",
-    "three": "^0.185.1",
-    "zustand": "^5.0.1",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "typescript": "7.0.2"
+    "three": "^0.185.1",
+    "typescript": "^5.6.3",
+    "zustand": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.6.3"
   }
 }
