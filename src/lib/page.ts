@@ -9,16 +9,21 @@ export const PAGE = {
 export const CONTENT_WIDTH = PAGE.width - PAGE.marginX * 2;   // 628
 export const CONTENT_HEIGHT = PAGE.height - PAGE.marginY * 2; // 973
 
-export function getPageGeometry(marginPreset = "normal") {
-  let marginX = 83; // ~2.2cm (Normal)
-  let marginY = 75; // ~2cm
+export function getPageGeometry(marginPreset: any = "normal") {
+  let marginTop = 75; // ~2cm
+  let marginBottom = 75;
+  let marginLeft = 83; // ~2.2cm
+  let marginRight = 83;
   
   if (marginPreset === "narrow") {
-    marginX = 45; // ~1.2cm
-    marginY = 38; // ~1cm
+    marginTop = 38; marginBottom = 38; marginLeft = 45; marginRight = 45;
   } else if (marginPreset === "wide") {
-    marginX = 113; // ~3cm
-    marginY = 94;  // ~2.5cm
+    marginTop = 94; marginBottom = 94; marginLeft = 113; marginRight = 113;
+  } else if (typeof marginPreset === 'object' && marginPreset !== null) {
+    marginTop = marginPreset.top ?? 75;
+    marginBottom = marginPreset.bottom ?? 75;
+    marginLeft = marginPreset.left ?? 83;
+    marginRight = marginPreset.right ?? 83;
   }
   
   const width = 794;
@@ -26,9 +31,13 @@ export function getPageGeometry(marginPreset = "normal") {
   return {
     width,
     height,
-    marginX,
-    marginY,
-    contentWidth: width - marginX * 2,
-    contentHeight: height - marginY * 2,
+    marginTop,
+    marginBottom,
+    marginLeft,
+    marginRight,
+    marginX: marginLeft, // Legacy fallback for now
+    marginY: marginTop,  // Legacy fallback for now
+    contentWidth: width - marginLeft - marginRight,
+    contentHeight: height - marginTop - marginBottom,
   };
 }

@@ -174,22 +174,48 @@ export async function exportDocx(blocks, st, fileName, opts = {}) {
       case "list": {
         const ref = b.ordered ? addOrderedRef(b.start || 1) : null;
         for (const item of b.items) {
-          children.push(new Paragraph({
-            ...(b.ordered ? { numbering: { reference: ref, level: 0 } } : { bullet: { level: 0 } }),
-            spacing: { line: spacing.line, after: 60 },
-            children: runs(item.inline, st, bodyOpts),
-          }));
+          if (item.isTask) {
+            const checkSymbol = item.checked ? "☑ " : "☐ ";
+            const checkColor = item.checked ? "10B981" : "64748B";
+            children.push(new Paragraph({
+              spacing: { line: spacing.line, after: 60 },
+              children: [
+                new TextRun({ text: checkSymbol, font: bodyFont, size: bodySize + 2, color: checkColor, bold: item.checked }),
+                ...runs(item.inline, st, bodyOpts),
+              ],
+            }));
+          } else {
+            children.push(new Paragraph({
+              ...(b.ordered ? { numbering: { reference: ref, level: 0 } } : { bullet: { level: 0 } }),
+              spacing: { line: spacing.line, after: 60 },
+              children: runs(item.inline, st, bodyOpts),
+            }));
+          }
           if (item.children) {
             const childRef = item.children.ordered ? addOrderedRef(item.children.start || 1) : null;
             for (const sub of item.children.items) {
-              children.push(new Paragraph({
-                ...(item.children.ordered
-                  ? { numbering: { reference: childRef, level: 0 } }
-                  : { bullet: { level: 1 } }),
-                indent: item.children.ordered ? { left: 1440, hanging: 360 } : undefined,
-                spacing: { line: spacing.line, after: 60 },
-                children: runs(sub, st, bodyOpts),
-              }));
+              const isSubTask = sub.isTask;
+              if (isSubTask) {
+                const subSymbol = sub.checked ? "☑ " : "☐ ";
+                const subColor = sub.checked ? "10B981" : "64748B";
+                children.push(new Paragraph({
+                  indent: { left: 720 },
+                  spacing: { line: spacing.line, after: 60 },
+                  children: [
+                    new TextRun({ text: subSymbol, font: bodyFont, size: bodySize + 2, color: subColor, bold: sub.checked }),
+                    ...runs(sub.inline || sub, st, bodyOpts),
+                  ],
+                }));
+              } else {
+                children.push(new Paragraph({
+                  ...(item.children.ordered
+                    ? { numbering: { reference: childRef, level: 0 } }
+                    : { bullet: { level: 1 } }),
+                  indent: item.children.ordered ? { left: 1440, hanging: 360 } : undefined,
+                  spacing: { line: spacing.line, after: 60 },
+                  children: runs(sub.inline || sub, st, bodyOpts),
+                }));
+              }
             }
           }
         }

@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import {
   FileText, Download, FileType2, Paintbrush, ArrowRight, Github, ExternalLink,
-  Layers, Zap, Cpu, Sparkles, Terminal, Code2, ShieldAlert
+  Layers, Zap, Cpu, Sparkles, Terminal, Code2, ShieldAlert,
+  Sigma, GitBranch, CheckSquare, MessageSquare, BookOpen, Globe, Check
 } from "lucide-react";
 import { Button } from "./ui/button";
 import InteractiveReveal from "./InteractiveReveal";
@@ -10,6 +11,7 @@ import InteractiveReveal from "./InteractiveReveal";
 export default function LandingPage({ onLaunchEditor }) {
   const containerRef = useRef(null);
   const [activeTab, setActiveTab] = useState("web");
+  const [featureTab, setFeatureTab] = useState("diagrams");
 
   const scrollToSection = (e, targetId) => {
     if (e) e.preventDefault();
@@ -291,8 +293,181 @@ export default function LandingPage({ onLaunchEditor }) {
             <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-amber-500" /> 100% Client-Side</span>
             <span className="flex items-center gap-1.5"><Layers className="h-4 w-4 text-sky-500" /> 5+ Curated Styles</span>
             <span className="flex items-center gap-1.5"><Cpu className="h-4 w-4 text-teal-500" /> Real .docx Generation</span>
+            <span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-purple-400" /> LaTeX Math & Mermaid</span>
           </div>
 
+        </div>
+      </section>
+
+      {/* ── Interactive Feature Playground / Showcase ── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-6 py-12">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 md:p-8 shadow-2xl backdrop-blur-md">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6 mb-6">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                <Sparkles className="h-3 w-3" /> Live Feature Suite
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold text-white">Full-Fidelity Technical Markdown</h3>
+            </div>
+            {/* Tabs */}
+            <div className="flex flex-wrap gap-1.5 rounded-xl bg-slate-900/80 p-1 border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setFeatureTab("diagrams")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  featureTab === "diagrams" ? "bg-sky-500 text-slate-950 shadow font-bold" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <GitBranch className="h-3.5 w-3.5" /> Diagrams
+              </button>
+              <button
+                type="button"
+                onClick={() => setFeatureTab("math")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  featureTab === "math" ? "bg-purple-500 text-white shadow font-bold" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Sigma className="h-3.5 w-3.5" /> KaTeX Math
+              </button>
+              <button
+                type="button"
+                onClick={() => setFeatureTab("callouts")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  featureTab === "callouts" ? "bg-emerald-500 text-slate-950 shadow font-bold" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <MessageSquare className="h-3.5 w-3.5" /> Callouts
+              </button>
+              <button
+                type="button"
+                onClick={() => setFeatureTab("cover")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                  featureTab === "cover" ? "bg-amber-500 text-slate-950 shadow font-bold" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <BookOpen className="h-3.5 w-3.5" /> Cover Pages
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content Display */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Description */}
+            <div className="lg:col-span-5 space-y-4 text-left">
+              {featureTab === "diagrams" && (
+                <>
+                  <h4 className="text-lg font-bold text-sky-400">Mermaid Vector Architecture</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Write standard <code className="text-sky-300 font-mono text-xs">```mermaid</code> code blocks to generate crisp vector flowcharts and cloud topologies that scale automatically into both PDF and Word documents.
+                  </p>
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-sky-400" /> Subgraph clusters & responsive layout</div>
+                    <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-sky-400" /> Exported as native vector graphics in Word & PDF</div>
+                  </div>
+                </>
+              )}
+
+              {featureTab === "math" && (
+                <>
+                  <h4 className="text-lg font-bold text-purple-400">KaTeX LaTeX Equations</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Render formulas with full LaTeX notation support using inline <code className="text-purple-300 font-mono text-xs">$E=mc^2$</code> or block display equations <code className="text-purple-300 font-mono text-xs">$$...$$</code>.
+                  </p>
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-purple-400" /> High-speed client-side rendering</div>
+                    <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-purple-400" /> Fractions, integrals, limits, and Greek symbols</div>
+                  </div>
+                </>
+              )}
+
+              {featureTab === "callouts" && (
+                <>
+                  <h4 className="text-lg font-bold text-emerald-400">GFM Alert & Notice Blocks</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Organize crucial insights using standard GitHub Flavored Markdown alerts (<code className="text-emerald-300 font-mono text-xs">&gt; [!NOTE]</code>, <code className="text-emerald-300 font-mono text-xs">&gt; [!TIP]</code>, <code className="text-emerald-300 font-mono text-xs">&gt; [!WARNING]</code>) with distinct icons and theme-aware styling.
+                  </p>
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-400" /> 5 Distinct callout categories</div>
+                    <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-400" /> Preserved in DOCX borders and PDF pages</div>
+                  </div>
+                </>
+              )}
+
+              {featureTab === "cover" && (
+                <>
+                  <h4 className="text-lg font-bold text-amber-400">Preset Cover Page Generator</h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Instantly turn technical notes into publication-grade whitepapers with customizable Executive, Modern Tech, and Academic cover page layouts.
+                  </p>
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-amber-400" /> Automated title, author & abstract formatting</div>
+                    <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-amber-400" /> First-page dedication with running headers</div>
+                  </div>
+                </>
+              )}
+
+              <Button
+                size="sm"
+                onClick={onLaunchEditor}
+                className="mt-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold shadow"
+              >
+                Try in Live Editor <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            {/* Right Interactive Preview Card */}
+            <div className="lg:col-span-7">
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 shadow-inner">
+                {featureTab === "diagrams" && (
+                  <div className="bg-white rounded-lg p-5 text-slate-800 shadow space-y-3">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cloud Flowchart Preview</div>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                      <div className="p-2.5 bg-sky-50 border border-sky-300 rounded font-semibold text-sky-900 text-center">🌐 Clients</div>
+                      <div className="text-slate-400 font-bold">➔</div>
+                      <div className="p-2.5 bg-blue-50 border border-blue-300 rounded font-semibold text-blue-900 text-center">⚡ CloudFront CDN</div>
+                      <div className="text-slate-400 font-bold">➔</div>
+                      <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded font-semibold text-emerald-900 text-center">🚀 Microservices</div>
+                    </div>
+                  </div>
+                )}
+
+                {featureTab === "math" && (
+                  <div className="bg-white rounded-lg p-5 text-slate-900 shadow space-y-3">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Calculated Availability SLA</div>
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center font-serif text-base font-semibold text-slate-800">
+                      {"Availability = ( MTBF / (MTBF + MTTR) ) × 100%"}
+                    </div>
+                    <div className="text-[11px] text-center text-slate-500 font-mono">
+                      {"$$\\text{Availability} = \\frac{\\text{MTBF}}{\\text{MTBF} + \\text{MTTR}} \\times 100\\%$$"}
+                    </div>
+                  </div>
+                )}
+
+                {featureTab === "callouts" && (
+                  <div className="bg-white rounded-lg p-5 text-slate-900 shadow space-y-2.5">
+                    <div className="border-l-4 border-blue-500 bg-blue-50/70 p-3 rounded-r text-xs text-blue-950 font-medium">
+                      <span className="font-bold text-blue-700">📌 NOTE:</span> Stateless microservices architecture enabled.
+                    </div>
+                    <div className="border-l-4 border-emerald-500 bg-emerald-50/70 p-3 rounded-r text-xs text-emerald-950 font-medium">
+                      <span className="font-bold text-emerald-700">💡 PRO-TIP:</span> Use slash commands (<code className="font-mono text-emerald-800">/</code>) to insert callouts instantly.
+                    </div>
+                  </div>
+                )}
+
+                {featureTab === "cover" && (
+                  <div className="bg-white rounded-lg p-6 text-slate-900 shadow text-left space-y-3">
+                    <div className="border-l-4 border-sky-600 pl-3">
+                      <div className="text-[10px] font-bold text-sky-600 uppercase tracking-widest">Acme Cloud Corp</div>
+                      <div className="text-base font-extrabold text-slate-900">Enterprise Cloud Architecture</div>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded border border-slate-200">
+                      <strong>Executive Summary:</strong> End-to-end technical blueprints for scalable cloud infrastructure.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

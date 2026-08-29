@@ -190,14 +190,19 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
         const indent = m2[1].length;
         const content = m2[3];
         const isOrdered = /\d/.test(m2[2]);
+        const taskMatch = content.match(/^\[([ xX])\]\s+(.*)$/);
+        const isTask = !!taskMatch;
+        const checked = isTask && taskMatch[1].toLowerCase() === "x";
+        const cleanContent = isTask ? taskMatch[2] : content;
+
         if (indent >= 2 && items.length > 0) {
           const parent = items[items.length - 1];
           if (!parent.children) {
             parent.children = { ordered: isOrdered, start: isOrdered ? parseInt(m2[2], 10) || 1 : 1, items: [] };
           }
-          parent.children.items.push(parseInline(content));
+          parent.children.items.push({ isTask, checked, inline: parseInline(cleanContent) });
         } else {
-          items.push({ inline: parseInline(content), children: null });
+          items.push({ isTask, checked, inline: parseInline(cleanContent), children: null });
         }
         i++;
       }

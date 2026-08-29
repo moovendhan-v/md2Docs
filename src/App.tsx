@@ -5,6 +5,7 @@ import { TEMPLATES } from "@/lib/templates";
 import { parseMarkdown } from "@/lib/parser";
 import { blocksToHtml } from "@/lib/renderHtml";
 import { exportDocx } from "@/lib/exportDocx";
+import { exportStandaloneHtml } from "@/lib/exportHtml";
 import { Packer } from "docx";
 
 import PagedPreview from "@/components/PagedPreview";
@@ -25,6 +26,8 @@ import {
   FileText, Upload, Download, FileType2, Paintbrush, Type, Sun, Moon, FileUp,
   Bold, Italic, Code, Link2, Table2, Quote, Split, Info, Undo, Redo, LayoutGrid,
   X, PanelLeftOpen, PanelLeftClose, PanelRightOpen, PanelRightClose,
+  Sigma, GitBranch, CheckSquare, MessageSquare, Sparkles, Printer, Globe, Copy, Check,
+  ChevronDown,
 } from "lucide-react";
 
 const getVsCodeApi = () => {
@@ -274,6 +277,10 @@ export default function App() {
     else if (syntax === "link") replacement = `[${selected || "link text"}](https://example.com)`;
     else if (syntax === "table") replacement = `\n| Metric | Value |\n|---|---|\n| Item 1 | 100 |\n| Item 2 | 200 |\n`;
     else if (syntax === "quote") replacement = `\n> ${selected || "quote"}\n`;
+    else if (syntax === "callout") replacement = `\n> [!NOTE]\n> ${selected || "Important takeaway or notice."}\n\n`;
+    else if (syntax === "math") replacement = `\n$$\n${selected || "\\text{Formula} = \\frac{a}{b}"}\n$$\n\n`;
+    else if (syntax === "mermaid") replacement = `\n\`\`\`mermaid\ngraph LR\n    A[Start] --> B[Process] --> C[Done]\n\`\`\`\n\n`;
+    else if (syntax === "checklist") replacement = `\n- [x] ${selected || "Completed task"}\n- [ ] Pending item\n\n`;
     else if (syntax === "hr") replacement = `\n---\n`;
     const newText = before + replacement + after;
     setMarkdown(newText);
@@ -460,6 +467,82 @@ export default function App() {
             <Download className="h-3.5 w-3.5" />
             {!isVsCode && "Word (.docx)"}
           </Button>
+
+          {!isVsCode && (
+            <div className="relative group">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 text-xs gap-1 hover:bg-secondary"
+                title="More Export Options"
+              >
+                <span>More</span>
+                <ChevronDown className="h-3 w-3 opacity-60" />
+              </Button>
+              <div className="absolute right-0 top-full mt-1 hidden group-hover:flex group-focus-within:flex flex-col w-48 rounded-xl border border-border/80 bg-background/95 p-1.5 shadow-xl backdrop-blur-md z-50 animate-in fade-in zoom-in-95 duration-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fullHtml = exportStandaloneHtml(html, styles, fileName, pages);
+                    const blob = new Blob([fullHtml], { type: "text/html" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${fileName}.html`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 2000);
+                  }}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground hover:bg-muted text-left transition-colors"
+                >
+                  <Globe className="h-3.5 w-3.5 text-primary" />
+                  <div className="flex-1">
+                    <div className="font-medium">Export HTML</div>
+                    <div className="text-[9px] text-muted-foreground">Standalone web page</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground hover:bg-muted text-left transition-colors"
+                >
+                  <Printer className="h-3.5 w-3.5 text-blue-500" />
+                  <div className="flex-1">
+                    <div className="font-medium">Print Page</div>
+                    <div className="text-[9px] text-muted-foreground">Browser print (⌘+P)</div>
+                  </div>
+                </button>
+
+                <div className="h-px bg-border/60 my-1" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.clipboard && window.ClipboardItem) {
+                      const blobHtml = new Blob([html], { type: "text/html" });
+                      const blobText = new Blob([markdown], { type: "text/plain" });
+                      const data = [new ClipboardItem({ "text/html": blobHtml, "text/plain": blobText })];
+                      navigator.clipboard.write(data).then(() => {
+                        alert("Rich formatted document copied to clipboard! You can paste directly into Google Docs, Notion, or Email.");
+                      });
+                    } else {
+                      navigator.clipboard.writeText(markdown);
+                      alert("Markdown copied to clipboard!");
+                    }
+                  }}
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-foreground hover:bg-muted text-left transition-colors"
+                >
+                  <Copy className="h-3.5 w-3.5 text-emerald-600" />
+                  <div className="flex-1">
+                    <div className="font-medium">Copy Rich Text</div>
+                    <div className="text-[9px] text-muted-foreground">Paste to Docs / Notion</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -494,6 +577,10 @@ export default function App() {
             <div className="h-4 w-px bg-border mx-1" />
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("link")} title="Link"><Link2 className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("table")} title="Table"><Table2 className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("checklist")} title="Task checklist"><CheckSquare className="h-3.5 w-3.5 text-emerald-600" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("callout")} title="Callout box"><MessageSquare className="h-3.5 w-3.5 text-blue-500" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("math")} title="LaTeX Math Formula"><Sigma className="h-3.5 w-3.5 text-purple-600" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("mermaid")} title="Mermaid Diagram"><GitBranch className="h-3.5 w-3.5 text-cyan-600" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80" onClick={() => insertMarkdown("quote")} title="Blockquote"><Quote className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 rounded hover:bg-secondary/80 text-primary" onClick={() => insertMarkdown("hr")} title="Page break"><Split className="h-3.5 w-3.5" /></Button>
           </div>

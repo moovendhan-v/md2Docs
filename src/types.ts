@@ -60,19 +60,31 @@ export interface BorderOptions {
 }
 
 export interface TemplateStyles {
-  h1?: StyleNode;
-  h2?: StyleNode;
-  h3?: StyleNode;
-  h4?: StyleNode;
-  h5?: StyleNode;
-  h6?: StyleNode;
-  p?: StyleNode;
-  list?: StyleNode;
-  code?: StyleNode;
-  blockquote?: StyleNode;
-  table?: {
-    header?: StyleNode;
-    cell?: StyleNode;
+  page?: any;
+  title?: any;
+  heading?: any;
+  table?: any;
+  code?: any;
+  blockquote?: any;
+  link?: any;
+  watermark?: {
+    text?: string;
+    color?: string;
+    opacity?: number;
+  };
+  header?: {
+    logoUrl?: string;
+    text?: string;
+    layout?: "logo-left" | "logo-right" | "center";
+    borderBottom?: boolean;
+    height?: number;
+  };
+  footer?: {
+    text?: string;
+    bannerColor?: string;
+    textColor?: string;
+    layout?: "center" | "split";
+    height?: number;
   };
 }
 

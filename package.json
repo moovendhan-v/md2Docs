@@ -1,5 +1,5 @@
 {
-  "name": "md-to-docs",
+  "name": "md2docs",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -9,11 +9,9 @@
     "lint": "next lint"
   },
   "bin": {
-    "md2docs": "./bin/cli.js",
-    "md2docs-mcp": "./bin/connect.mjs"
+    "md2docs": "./bin/cli.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-icons": "^1.3.2",
     "@radix-ui/react-label": "^2.1.0",

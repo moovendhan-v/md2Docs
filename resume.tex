@@ -1,0 +1,210 @@
+\documentclass[8.8pt,a4paper]{article}
+\usepackage[top=0.30in, bottom=0.30in, left=0.42in, right=0.42in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{microtype}
+\usepackage{paracol}
+
+\definecolor{teal}{RGB}{0,160,160}
+\definecolor{darkgray}{RGB}{50,50,50}
+\definecolor{medgray}{RGB}{110,110,110}
+\definecolor{pillbg}{RGB}{232,232,232}
+
+\hypersetup{colorlinks=true,urlcolor=teal,linkcolor=teal}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\pagestyle{empty}
+
+\newcommand{\pill}[1]{%
+  \tikz[baseline=(t.base)]{
+    \node[inner xsep=6pt,inner ysep=3pt,rounded corners=3.5pt,fill=pillbg,
+          text=darkgray,font=\fontsize{6.8}{8}\selectfont] (t) {#1};
+  }\hspace{1.5pt}%
+}
+
+\newcommand{\ressection}[1]{%
+  \vspace{2pt}%
+  {\fontsize{7.8}{9}\selectfont\bfseries\color{darkgray}\MakeUppercase{#1}}%
+  \vspace{1pt}\hrule height 0.5pt\vspace{2pt}%
+}
+
+\newcommand{\jobentry}[3]{%
+  {\fontsize{8.5}{10}\selectfont\bfseries\color{darkgray}#1}\\[0.2pt]%
+  {\fontsize{7.8}{9}\selectfont\color{teal}#2}\\[0.2pt]%
+  {\fontsize{6.8}{8}\selectfont\color{medgray}#3}%
+  \vspace{0.8pt}%
+}
+
+\newcommand{\projentry}[3]{%
+  {\fontsize{8.2}{9.5}\selectfont\bfseries\color{darkgray}#1}\\[0.2pt]%
+  {\fontsize{7}{8.5}\selectfont\color{medgray}#2 \textbullet\ #3}%
+  \vspace{0.8pt}%
+}
+
+\newcommand{\skillcat}[1]{%
+  \vspace{2pt}%
+  {\fontsize{7.5}{9}\selectfont\bfseries\color{teal}#1}\\[1.5pt]%
+}
+
+\newcommand{\bi}[1]{{\fontsize{7.2}{9.5}\selectfont #1}}
+
+\setlist[itemize]{leftmargin=8pt,itemsep=0pt,topsep=0pt,parsep=0pt,
+  label={\fontsize{5}{5}\selectfont\color{darkgray}\textbullet}}
+
+\begin{document}
+
+%% HEADER
+{\fontsize{21}{25}\selectfont\bfseries\color{darkgray}MOOVENDHAN V}\\[1.5pt]
+{\fontsize{10}{12}\selectfont\color{teal}Backend \& DevOps Engineer}\\[3pt]
+{\fontsize{7.3}{9}\selectfont\color{darkgray}
+  +91\,9750639894\enspace
+  \href{mailto:moovendhan.webengineer@gmail.com}{moovendhan.webengineer@gmail.com}\enspace
+  \href{https://linkedin.com/in/moovendhanv}{linkedin.com/in/moovendhanv}\enspace
+  \href{https://profile.cybertechmind.com}{profile.cybertechmind.com}\enspace
+  Puducherry, India
+}
+
+\vspace{3pt}\hrule height 0.7pt\vspace{2pt}
+
+\columnratio{0.64}
+\begin{paracol}{2}
+
+%% LEFT
+
+\ressection{Summary}
+{\fontsize{7.3}{9.8}\selectfont
+Backend and DevOps Engineer with 2+ years of production experience -- started as a backend developer on a high-scale job matching platform, then expanded into cloud infrastructure and DevOps. Specialize in ECS Fargate, Terraform/CloudFormation IaC, serverless architectures (Lambda + API Gateway), and event-driven systems (SQS, SNS, EventBridge). AWS Certified Solutions Architect -- Associate (SAA-C03).
+}
+
+\vspace{1pt}
+\ressection{Experience}
+
+\jobentry{Backend \& DevOps Engineer}{MeyiCloud}{04/2025 -- Present}
+\begin{itemize}
+\item\bi{Automated zero-downtime blue-green deployments via Terraform and Step Functions -- EC2 builders promote EBS snapshots and gate ALB traffic swap on Locust load test results}
+\item\bi{Deployed ECS Fargate microservices with Redis pub/sub adapter for Socket.IO horizontal scaling; FastAPI services with SQS async processing and dev/prod parity via Docker Compose}
+\item\bi{Built CI/CD pipelines with ECR vulnerability scanning, environment-gated promotions, and least-privilege IAM}
+\item\bi{Provisioned multi-environment infrastructure with full IaC (CloudFormation, Terraform) and OIDC-based CI/CD}
+\end{itemize}
+
+\vspace{1.5pt}
+\jobentry{Backend Developer}{MeyiCloud}{04/2024 -- 04/2025}
+\begin{itemize}
+\item\bi{Led backend architecture on Blueshirt -- designed serverless topology using Lambda, API Gateway, SQS, and RDS PostgreSQL with VPC and NAT Gateway}
+\item\bi{Redesigned bulk notification delivery into SNS/SQS fan-out with per-channel worker Lambdas and DLQs -- independent scaling per channel, failure-isolated}
+\item\bi{Resolved RDS connection exhaustion from Lambda cold-start churn via RDS Proxy -- reduced peak connections by $\sim$80\%, eliminated DB-level timeout errors}
+\item\bi{Built async resume ingestion pipeline (S3$\to$SQS$\to$Textract$\to$LLM$\to$pgvector); migrated raw SQL to Drizzle ORM -- type-safe queries across 30+ interactions, eliminated SQL injection}
+\end{itemize}
+
+\vspace{1pt}
+\ressection{Projects}
+
+\projentry{Blueshirt -- Job Matching Platform}{Backend Developer, MeyiCloud}{2024}
+\begin{itemize}
+\item\bi{Serverless topology: Lambda + API Gateway, SQS, RDS PostgreSQL + pgvector, Cognito -- within VPC with NAT Gateway; RDS Proxy reduced peak connections by $\sim$80\%}
+\item\bi{SNS/SQS fan-out notification system with Orchestrator Lambda and per-channel DLQ workers; S3$\to$Textract$\to$LLM$\to$pgvector resume ingestion pipeline}
+\item\bi{Drizzle ORM migration from raw SQL + Sequelize -- compile-time type-safe queries across 30+ interactions, eliminated SQL injection surface}
+\item\bi{\textbf{Stack:} Node.js, Lambda, API Gateway, RDS Proxy, SQS, SNS, Textract, S3, PostgreSQL (pgvector), Drizzle ORM, Cognito, CloudFormation}
+\end{itemize}
+
+\vspace{1.5pt}
+\projentry{Serendipity -- Planet-Scale Geospatial Routing}{Infrastructure Engineer, MeyiCloud}{2025}
+\begin{itemize}
+\item\bi{Reduced geospatial routing costs by \$5,000+/month (from \$6,000+/month to $\sim$\$800/month on Graviton3 EC2) -- 83\%+ cost reduction, no SLA degradation}
+\item\bi{Automated blue-green pipeline: EC2 builders preprocess OSM planet data, promote EBS snapshot, swap ALB traffic after Locust tests -- zero-downtime weekly refreshes}
+\item\bi{\textbf{Stack:} Terraform, EC2 (Graviton3), Step Functions, Lambda, ALB, EBS, SSM, S3, Locust, CloudWatch}
+\end{itemize}
+
+\vspace{1.5pt}
+\projentry{oo.expert -- AI-Powered Document Platform}{Backend \& DevOps Engineer, MeyiCloud}{2025}
+\begin{itemize}
+\item\bi{FastAPI on ECS Fargate with SQS async processing; Redis pub/sub adapter for Socket.IO horizontal scaling without sticky sessions}
+\item\bi{CI/CD: ECR image scanning gates promotion, per-environment IAM roles via OIDC, Docker Compose mirrors production ECS topology}
+\item\bi{\textbf{Stack:} Python, FastAPI, Docker Compose, ECS Fargate, SQS, Redis, Socket.IO, PostgreSQL, ECR, Secrets Manager}
+\end{itemize}
+
+\vspace{1.5pt}
+\projentry{DojoWell -- Multi-Environment Infrastructure}{DevOps Engineer, MeyiCloud}{2024}
+\begin{itemize}
+\item\bi{Parameterized CloudFormation stacks for single-command env provisioning -- reduced setup from hours to under 5 minutes, eliminated drift across dev/staging/production}
+\item\bi{\textbf{Stack:} Bitbucket Pipelines, CloudFormation, CloudWatch, IAM, OIDC, Secrets Manager}
+\end{itemize}
+
+%% RIGHT
+\switchcolumn
+
+\ressection{Education}
+{\fontsize{8.5}{10}\selectfont\bfseries Bachelor of Computer Applications (BCA)}\\[0.3pt]
+{\fontsize{8}{9.5}\selectfont\color{teal}Achariya Arts and Science College}\\[0.3pt]
+{\fontsize{6.8}{8.5}\selectfont\color{medgray}09/2019 -- 10/2022}
+
+\vspace{2pt}
+\ressection{Certification}
+{\fontsize{7.5}{9}\selectfont\bfseries AWS Certified Solutions Architect -- Associate}\\[0.3pt]
+{\fontsize{6.8}{8.5}\selectfont\color{medgray}Amazon Web Services, 2025 (SAA-C03)}
+
+\vspace{2pt}
+\ressection{Skills}
+
+\skillcat{Cloud Platforms}
+\pill{AWS}\pill{ECS Fargate}\pill{EC2}\\[1.5pt]
+\pill{Lambda}\pill{RDS}\pill{RDS Proxy}\pill{S3}\\[1.5pt]
+\pill{SQS}\pill{SNS}\pill{EventBridge}\\[1.5pt]
+\pill{API Gateway}\pill{ALB}\pill{ECR}\\[1.5pt]
+\pill{Textract}\pill{Cognito}\pill{Step Functions}\\[1.5pt]
+\pill{Secrets Manager}\pill{Route 53}\pill{VPC}\\[1.5pt]
+\pill{NAT Gateway}\pill{CloudWatch}
+
+\skillcat{IaC \& DevOps}
+\pill{Terraform}\pill{CloudFormation}\pill{Docker}\\[1.5pt]
+\pill{CodePipeline}\pill{CodeBuild}\pill{GitHub Actions}\\[1.5pt]
+\pill{Bitbucket Pipelines}\pill{OIDC Auth}\\[1.5pt]
+\pill{Blue-Green Deployments}\\[1.5pt]
+\pill{Multi-Environment IaC}
+
+\skillcat{Backend}
+\pill{Node.js}\pill{Express}\pill{Python}\\[1.5pt]
+\pill{FastAPI}\pill{Flask}\pill{PostgreSQL}\\[1.5pt]
+\pill{Redis}\pill{pgvector}\pill{Socket.IO}\\[1.5pt]
+\pill{Drizzle ORM}\pill{Serverless}
+
+\skillcat{Security}
+\pill{IAM Least-Privilege}\pill{OIDC Auth}\\[1.5pt]
+\pill{Secrets Manager}\pill{VPC Isolation}\\[1.5pt]
+\pill{ECR Scanning}
+
+\vspace{2pt}
+\ressection{Technical Writing}
+{\fontsize{7.3}{9.8}\selectfont
+Author at \href{https://cybertechmind.com}{cybertechmind.com} -- guides on AWS, API design, backend development, and web security.
+}
+
+\vspace{2pt}
+\ressection{Personal Projects}
+{\fontsize{7.8}{9.5}\selectfont\bfseries md2docs -- Markdown to Document Converter}\\[0.3pt]
+{\fontsize{7}{8.5}\selectfont\color{teal}\href{https://md2docs.cybertechmind.com}{md2docs.cybertechmind.com} \textbullet\ 2025}\\[1.5pt]
+{\fontsize{7.2}{9.5}\selectfont Web tool and VS Code extension converting Markdown to Word/PDF, eliminating dual-file maintenance.}\\[1pt]
+{\fontsize{6.8}{8.5}\selectfont\color{medgray}React, Vite, Cloudflare Pages, VS Code Extension API}
+
+\vspace{2pt}
+\ressection{Security Research}
+\begin{itemize}
+\item\bi{Disclosed IDOR in Replit.ai (AI chat limit bypass); invited to private HackerOne program}
+\item\bi{Second IDOR in a production SaaS under responsible disclosure}
+\end{itemize}
+
+\vspace{2pt}
+\ressection{Languages \& Interests}
+{\fontsize{7.3}{9.8}\selectfont
+English (Professional) \textbullet\ Tamil (Native)\\[1.5pt]
+Distributed Systems \textbullet\ Cloud Infrastructure \textbullet\ Event-Driven Architecture \textbullet\ DevOps Automation \textbullet\ Web Security
+}
+
+\end{paracol}
+\end{document}

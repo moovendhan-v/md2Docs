@@ -4,6 +4,7 @@ import { useDocStore } from "@/store/useDocStore";
 import { getPageGeometry } from "@/lib/page";
 import { baseStyle } from "@/lib/renderHtml";
 import { renderMermaidDiagrams } from "@/lib/mermaid";
+import { renderCoverPageHtml } from "@/lib/coverPage";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, LayoutList, LayoutGrid } from "lucide-react";
 import ElementInspector from "@/components/ElementInspector";
@@ -187,6 +188,14 @@ export default function PagedPreview({ html }) {
       current.push(b.outerHTML);
     });
     closePage();
+
+    if (styles.coverPage?.enabled) {
+      const coverHtml = renderCoverPageHtml(styles.coverPage, styles, styles.docMeta || {}, geom);
+      if (coverHtml) {
+        result.unshift(coverHtml);
+      }
+    }
+
     setPages(result.length ? result : [""]);
   }, [html, styles, setPages, geom.contentHeight, mermaidTick, showPageNumbers, layoutTick]);
 
@@ -321,10 +330,12 @@ export default function PagedPreview({ html }) {
                   className="page-content-wrapper shadow-[0_10px_30px_rgba(0,0,0,0.18)] ring-1 ring-black/10"
                   style={{
                     width: geom.width, height: geom.height,
-                    padding: `${geom.marginY}px ${geom.marginX}px`,
-                    paddingBottom: showPageNumbers ? `${Math.max(geom.marginY, 32)}px` : `${geom.marginY}px`,
+                    padding: `${geom.marginTop}px ${geom.marginRight}px ${showPageNumbers ? Math.max(geom.marginBottom, 32) : geom.marginBottom}px ${geom.marginLeft}px`,
                     boxSizing: "border-box", overflow: "hidden",
                     background: styles.page.bg || "#ffffff",
+                    backgroundImage: styles.page.backgroundUrl ? `url(${styles.page.backgroundUrl})` : "none",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
                     position: "relative",
                   }}
                 >
@@ -337,18 +348,107 @@ export default function PagedPreview({ html }) {
                         left: `${borderInset}px`,
                         right: `${borderInset}px`,
                         bottom: showPageNumbers
-                          ? `${Math.max(geom.marginY - 8, borderInset + 16)}px`
+                          ? `${Math.max(geom.marginBottom - 8, borderInset + 16)}px`
                           : `${borderInset}px`,
                         border: `${borderWidth}px ${borderStyle} ${borderColor}`,
                         pointerEvents: "none",
                         boxSizing: "border-box",
+                        zIndex: 10,
                       }}
                     />
+                  )}
+                  {/* Structured Header */}
+                  {(styles.header?.text || styles.header?.logoUrl) && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        padding: `20px ${geom.marginRight}px 20px ${geom.marginLeft}px`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: styles.header.layout === "center" ? "center" : "space-between",
+                        flexDirection: styles.header.layout === "logo-right" ? "row-reverse" : "row",
+                        borderBottom: styles.header.borderBottom ? `1px solid ${borderColor}` : "none",
+                        backgroundColor: "transparent",
+                        zIndex: 11,
+                        height: styles.header.height ? `${styles.header.height}px` : "auto"
+                      }}
+                    >
+                      {styles.header.logoUrl && (
+                        <img 
+                          src={styles.header.logoUrl} 
+                          alt="Header Logo" 
+                          style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain" }} 
+                        />
+                      )}
+                      {styles.header.text && (
+                        <span style={{ 
+                          fontFamily: styles.page.fontFamily, 
+                          fontSize: "10pt", 
+                          fontWeight: "bold", 
+                          color: borderColor 
+                        }}>
+                          {styles.header.text}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Structured Footer */}
+                  {(styles.footer?.text || styles.footer?.bannerColor) && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: styles.footer.height ? `${styles.footer.height}px` : "40px",
+                        backgroundColor: styles.footer.bannerColor || "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: styles.footer.layout === "split" ? "space-between" : "center",
+                        padding: `0 ${geom.marginRight}px 0 ${geom.marginLeft}px`,
+                        zIndex: 11,
+                      }}
+                    >
+                      {styles.footer.text && (
+                        <span style={{ 
+                          fontFamily: styles.page.fontFamily, 
+                          fontSize: "9pt", 
+                          color: styles.footer.textColor || "#ffffff" 
+                        }}>
+                          {styles.footer.text}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {/* Watermark */}
+                  {styles.watermark?.text && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%) rotate(-45deg)",
+                        color: styles.watermark.color || "#cccccc",
+                        opacity: styles.watermark.opacity !== undefined ? styles.watermark.opacity : 0.2,
+                        fontSize: "80pt",
+                        fontFamily: "sans-serif",
+                        fontWeight: "bold",
+                        whiteSpace: "nowrap",
+                        pointerEvents: "none",
+                        zIndex: 0,
+                      }}
+                    >
+                      {styles.watermark.text}
+                    </div>
                   )}
                   {/* Content — interactive for click-to-inspect */}
                   <div
                     className="preview-interactive"
-                    style={styleObj(baseStyle(styles))}
+                    style={{ ...styleObj(baseStyle(styles)), position: "relative", zIndex: 1 }}
                     dangerouslySetInnerHTML={{ __html: pageHtml }}
                     onClick={handleContentClick}
                   />
@@ -357,10 +457,12 @@ export default function PagedPreview({ html }) {
                   {showPageNumbers && (
                     <div style={{
                       position: "absolute", bottom: 0, left: 0, right: 0,
-                      height: `${geom.marginY}px`,
+                      height: `${geom.marginBottom}px`,
+                      paddingLeft: `${geom.marginLeft}px`, 
+                      paddingRight: `${geom.marginRight}px`,
                       display: "flex", alignItems: "center", justifyContent: pageNumAlignStyle,
-                      paddingLeft: `${geom.marginX}px`, paddingRight: `${geom.marginX}px`,
                       pointerEvents: "none",
+                      zIndex: 10,
                     }}>
                       <span style={{
                         color: pageNumColor, fontSize: `${pageNumSize}pt`,
