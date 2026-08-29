@@ -396,27 +396,26 @@ export const TEMPLATES = {
       title: { fontSize: 28, color: "#c2410c", align: "left", uppercase: false, rule: true, ruleColor: "#fdba74", ruleWidth: 2, letterSpacing: 0 },
       heading: { fontSize: 15, color: "#ea580c", uppercase: false, rule: false, ruleColor: "#fed7aa", letterSpacing: 0 },
       table: { headerBg: "#fff7ed", headerColor: "#c2410c", borderColor: "#fed7aa", striped: true, stripeColor: "#fffaf0", headerAlign: "left" },
-      code: { bg: "#fff1e6", color: "#9a3412", borderRadius: 4, border: false, borderColor: "#fed7aa" },
       blockquote: { borderColor: "#fb923c", italic: true, color: "#7c2d12", borderWidth: 3, bg: "transparent" },
       link: { color: "#dc2626", underline: true },
     },
   },
 };
 
-
 export const DEFAULT_MD = `# Moovendhan V | Backend & DevOps Cloud Engineer
 
-![Profile Photo](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/moovendhan_banner.png)
+![Profile Banner](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/moovendhan_banner.png)
 
-## Tech Stack
+
+## Tech Stack & Ecosystem
 
 <div align="center">
 
-![Profile Photo](https://skillicons.dev/icons?i=html,css,js,ts,react,nextjs,tailwind,bootstrap,nodejs,nestjs,express,py,fastapi,php,mysql,postgres,mongodb,redis,sqlite,graphql,prisma,firebase,aws,docker,kubernetes,terraform,jenkins,githubactions,git,github,linux,ubuntu,nginx,vscode,postman,bash&perline=12)
+![Tech Stack Icons](https://skillicons.dev/icons?i=html,css,js,ts,react,nextjs,tailwind,bootstrap,nodejs,nestjs,express,py,fastapi,php,mysql,postgres,mongodb,redis,sqlite,graphql,prisma,firebase,aws,docker,kubernetes,terraform,jenkins,githubactions,git,github,linux,ubuntu,nginx,vscode,postman,bash&perline=12)
 
 </div>
 
-## AWS Cloud Services
+## AWS Cloud Architecture Services
 
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
   <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-efs/default.svg" width="45" title="Amazon EFS">
@@ -457,7 +456,6 @@ export const DEFAULT_MD = `# Moovendhan V | Backend & DevOps Cloud Engineer
   <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-elastic-load-balancing/default.svg" width="45" title="Elastic Load Balancing">
 </div>
 
-
 Highly motivated **Backend & DevOps Engineer** with 2+ years of experience building scalable APIs, microservices, and cloud-native AWS infrastructure in production environments. Proficient in designing resilient, secure, and cost-optimized cloud architectures.
 
 ## Professional Summary
@@ -468,8 +466,8 @@ Highly motivated **Backend & DevOps Engineer** with 2+ years of experience build
 
 ## Certification
 
-**AWS Certified Solutions Architect – Associate (SAA-C03)**
-*Amazon Web Services, 2025*
+**AWS Certified Solutions Architect – Associate (SAA-C03)**  
+*Amazon Web Services, 2025*  
 Validated expertise in designing resilient, secure, high-performing, and cost-optimized AWS architectures.
 
 ## Technical Skills
@@ -482,27 +480,87 @@ Validated expertise in designing resilient, secure, high-performing, and cost-op
 - **Security & IaC**: CloudFormation, IAM Roles & Policies, OWASP Standards, OAuth/OIDC, Secrets Management, VPC Isolation
 - **Developer Tools**: Git, Jira, Pytest, Postman, Docker Hub, Technical Documentation
 
-## Live Style Playground
+## Cloud Architecture & System Flow
 
-Test the click-to-customize feature on these elements:
+The diagram below illustrates the end-to-end multi-region microservices deployment architecture:
 
-> **Blockquote Customization**: "Design is not just what it looks like and feels like. Design is how it works." — Steve Jobs (Click to edit border weight, background, color, italic style)
-
-\`\`\`javascript
-// Click me to style code block background, colors and border radius!
-const md2Docs = {
-  editor: "Live Markdown",
-  features: ["Custom Borders", "Page Numbers", "Inspect Element"]
-};
+\`\`\`mermaid
+graph TD
+    Client[🌐 Web / Mobile Clients] --> CDN[⚡ CloudFront CDN & WAF]
+    CDN --> ALB[⚖️ Application Load Balancer]
+    ALB --> ECS[🚀 ECS Fargate Cluster]
+    ALB --> Lambda[⚡ Serverless Lambda]
+    ECS --> Redis[(⚡ Redis Cache)]
+    ECS --> Aurora[(🗄️ Aurora Multi-AZ DB)]
+    Lambda --> S3[📦 Amazon S3 Storage]
 \`\`\`
 
-### Key Projects & Impact
+## System Reliability & Performance Formulas
+
+System availability and SLA metrics are computed using high-availability formulations:
+
+$$ \\text{Availability} = \\frac{\\text{MTBF}}{\\text{MTBF} + \\text{MTTR}} \\times 100\\% $$
+
+Throughput under concurrent load with latency bounded by $T(n) = O(n \\log n)$:
+
+$$ \\text{Throughput} = \\frac{\\sum_{i=1}^{k} \\text{Requests}_i}{\\Delta t_{\\text{response}}} \\times \\left( 1 - \\mathcal{E}_{\\text{error}} \\right) $$
+
+## Enterprise Production Alerts & Notices
+
+> [!NOTE] Architecture Review Notice
+> All microservices adhere to 12-Factor application principles with stateless container execution.
+
+> [!TIP] Pro Tip for Technical Writers
+> MD → Docs natively supports **GFM Callouts**, **$\\LaTeX$ Math**, **Mermaid Diagrams**, **Task Lists**, and **Security Watermarks** across both PDF and Word exports!
+
+> [!IMPORTANT] Production Readiness
+> Production workloads require automated database failover across at least 3 Availability Zones.
+
+> [!WARNING] Rate Limiting
+> API Gateway throttling triggers automatically when burst capacity exceeds 10,000 requests/sec.
+
+> [!CAUTION] Security Compliance
+> Never hardcode IAM credentials or API keys; use AWS Secrets Manager with automatic secret rotation.
+
+## Infrastructure as Code Sample
+
+\`\`\`typescript
+// AWS CDK Cloud Infrastructure Deployment Definition
+import * as cdk from "aws-cdk-lib";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as ecs from "aws-cdk-lib/aws-ecs";
+
+export class CloudInfraStack extends cdk.Stack {
+  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    const vpc = new ec2.Vpc(this, "ProductionVPC", { maxAzs: 3 });
+    const cluster = new ecs.Cluster(this, "ProductionCluster", { vpc });
+
+    console.log(\`Provisioned VPC \${vpc.vpcId} and ECS Cluster \${cluster.clusterName}\`);
+  }
+}
+\`\`\`
+
+## Deployment Checklist
+
+- [x] AWS Multi-Region VPC & Auto-Scaling ALB configuration[^1]
+- [x] Zero-Downtime Blue-Green Deployment with AWS CodeDeploy
+- [x] Automated Daily Backups & Disaster Recovery Drill[^2]
+- [ ] Multi-tenant Redis cluster caching migration
+
+## Key Projects & Impact
 
 | Project | Key Technologies | Outcome & Contribution |
 | :--- | :--- | :--- |
 | **CI/CD Pipeline** | GitHub Actions, Docker, ECS Fargate | Designed robust automated pipelines, decreasing deployment times by 50%. |
 | **IaC Cloud Setup** | CloudFormation, VPC, IAM, ALB | Managed AWS infrastructure setup, achieving 99.9% uptime and security isolation. |
+| **Event-Driven Broker** | Amazon SQS, SNS, Lambda, Redis | Scaled asynchronous message processing to 25k+ events/min with zero message loss. |
 
+## Blockquote Reference
+
+> "Design is not just what it looks like and feels like. Design is how it works."  
+> — *Steve Jobs*
 
 ## Contact & Links
 
@@ -511,6 +569,9 @@ const md2Docs = {
 - **GitHub**: [github.com/moovendhan-v](https://github.com/moovendhan-v/md2Docs)
 - **Website**: [cybertechmind.com](https://cybertechmind.com)
 
-*Generated dynamically using MD → Docs.*
+[^1]: High-availability deployment validated across 3 AWS Availability Zones with automated health-check failover.
+[^2]: Automated point-in-time recovery with RPO < 5 minutes and RTO < 15 minutes.
+
+*Generated dynamically using MD → Docs.*  
 *md2docs.cybertechmind.com*
 `;

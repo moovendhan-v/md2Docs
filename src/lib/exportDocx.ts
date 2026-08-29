@@ -1,3 +1,4 @@
+//@ts-nocheck
 /* Tokens + styles → real .docx via the `docx` package.
    Opens natively in MS Word, Google Docs, LibreOffice.
 
@@ -18,38 +19,67 @@ const half = (pt) => Math.round(pt * 2); // docx font sizes are half-points
 const CM = 567; // twips per cm
 
 /* Render a mermaid string to a PNG Uint8Array via SVG → canvas. */
-async function mermaidToPng(text) {
+async function mermaidToPng(text: string): Promise<Uint8Array> {
   const svg = await renderMermaidSvg(text);
-  const blob = await new Promise((resolve) => {
+  const blob = await new Promise<Blob>((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth * 2;
       canvas.height = img.naturalHeight * 2;
       const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas context is null"));
+        return;
+      }
       ctx.scale(2, 2);
       ctx.drawImage(img, 0, 0);
-      canvas.toBlob((b) => resolve(b), "image/png");
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Blob creation failed"))), "image/png");
     };
+    img.onerror = reject;
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   });
   const buf = await blob.arrayBuffer();
   return new Uint8Array(buf);
 }
 
-function runs(inline, st, opts = {}) {
-  const out = [];
-  for (const r of inline) {
+interface RunOptions {
+  font?: string;
+  size?: number;
+  color?: string;
+  allCaps?: boolean;
+  bold?: boolean;
+  italics?: boolean;
+}
+
+function runs(inline: any, st: any, opts: RunOptions = {}) {
+  const out: any[] = [];
+  if (!inline) return out;
+  const list = Array.isArray(inline) ? inline : [inline];
+
+  for (const r of list) {
+    if (!r) continue;
+    const isObj = typeof r === "object";
+    const textVal = isObj ? (r.text ?? "") : String(r);
     const common = {
       font: opts.font,
       size: opts.size,
       color: opts.color,
       allCaps: opts.allCaps,
-      bold: opts.bold || r.bold,
-      italics: opts.italics || r.italic,
+      bold: Boolean(opts.bold || (isObj && r.bold)),
+      italics: Boolean(opts.italics || (isObj && r.italic)),
     };
     const textParts = r.text.split("\n");
     switch (r.t) {
+      case "math":
+        textParts.forEach((part, idx) => {
+          if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
+          out.push(new TextRun({ ...common, text: part, font: "Cambria Math", color: hex(st.page.textColor), italics: true }));
+        });
+        break;
+      case "footnote-ref":
+        out.push(new TextRun({ ...common, text: `[${r.footnoteId || ""}]`, superScript: true, color: hex(st.link.color), bold: true }));
+        break;
       case "code":
         textParts.forEach((part, idx) => {
           if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
@@ -57,19 +87,20 @@ function runs(inline, st, opts = {}) {
         });
         break;
       case "link": {
+        const href = isObj && r.href ? r.href : "#";
         textParts.forEach((part, idx) => {
           if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
           const child = new TextRun({ ...common, text: part, color: hex(st.link.color), underline: {} });
-          if (r.href.startsWith("#")) {
-            out.push(new InternalHyperlink({ anchor: r.href.slice(1), children: [child] }));
+          if (href.startsWith("#")) {
+            out.push(new InternalHyperlink({ anchor: href.slice(1), children: [child] }));
           } else {
-            out.push(new ExternalHyperlink({ link: r.href, children: [child] }));
+            out.push(new ExternalHyperlink({ link: href, children: [child] }));
           }
         });
         break;
       }
       case "image":
-        out.push(new TextRun({ ...common, text: `[Image: ${r.text || "Photo"}]`, color: "888888", italics: true }));
+        out.push(new TextRun({ ...common, text: `[Image: ${textVal || "Photo"}]`, color: "888888", italics: true }));
         break;
       default:
         textParts.forEach((part, idx) => {
@@ -85,7 +116,12 @@ function runs(inline, st, opts = {}) {
 
 const ALIGN = { left: AlignmentType.LEFT, center: AlignmentType.CENTER, right: AlignmentType.RIGHT };
 
-export async function exportDocx(blocks, st, fileName, opts = {}) {
+export interface ExportDocxOptions {
+  hrPageBreak?: boolean;
+  [key: string]: any;
+}
+
+export async function exportDocx(blocks: any, st: any, fileName?: string, opts: ExportDocxOptions = {}) {
   const bodyFont = st.page.fontFamily.split(",")[0].replace(/['"]/g, "").trim();
   const bodySize = half(st.page.fontSize);
   const bodyColor = hex(st.page.textColor);
@@ -174,51 +210,87 @@ export async function exportDocx(blocks, st, fileName, opts = {}) {
       case "list": {
         const ref = b.ordered ? addOrderedRef(b.start || 1) : null;
         for (const item of b.items) {
-          if (item.isTask) {
-            const checkSymbol = item.checked ? "☑ " : "☐ ";
-            const checkColor = item.checked ? "10B981" : "64748B";
-            children.push(new Paragraph({
-              spacing: { line: spacing.line, after: 60 },
-              children: [
-                new TextRun({ text: checkSymbol, font: bodyFont, size: bodySize + 2, color: checkColor, bold: item.checked }),
-                ...runs(item.inline, st, bodyOpts),
-              ],
-            }));
-          } else {
-            children.push(new Paragraph({
-              ...(b.ordered ? { numbering: { reference: ref, level: 0 } } : { bullet: { level: 0 } }),
-              spacing: { line: spacing.line, after: 60 },
-              children: runs(item.inline, st, bodyOpts),
-            }));
+          const taskPrefix = item.checked !== undefined ? (item.checked ? "☒ " : "☐ ") : "";
+          const itemRuns = item.inline ? runs(item.inline, st, bodyOpts) : [];
+          if (taskPrefix) {
+            itemRuns.unshift(new TextRun({ text: taskPrefix, font: "Segoe UI Symbol, Arial Unicode MS", size: bodySize, bold: true }));
           }
+          children.push(new Paragraph({
+            ...(b.ordered ? { numbering: { reference: ref, level: 0 } } : { bullet: item.checked !== undefined ? undefined : { level: 0 } }),
+            indent: item.checked !== undefined ? { left: 720 } : undefined,
+            spacing: { line: spacing.line, after: 60 },
+            children: itemRuns,
+          }));
           if (item.children) {
             const childRef = item.children.ordered ? addOrderedRef(item.children.start || 1) : null;
             for (const sub of item.children.items) {
-              const isSubTask = sub.isTask;
-              if (isSubTask) {
-                const subSymbol = sub.checked ? "☑ " : "☐ ";
-                const subColor = sub.checked ? "10B981" : "64748B";
-                children.push(new Paragraph({
-                  indent: { left: 720 },
-                  spacing: { line: spacing.line, after: 60 },
-                  children: [
-                    new TextRun({ text: subSymbol, font: bodyFont, size: bodySize + 2, color: subColor, bold: sub.checked }),
-                    ...runs(sub.inline || sub, st, bodyOpts),
-                  ],
-                }));
-              } else {
-                children.push(new Paragraph({
-                  ...(item.children.ordered
-                    ? { numbering: { reference: childRef, level: 0 } }
-                    : { bullet: { level: 1 } }),
-                  indent: item.children.ordered ? { left: 1440, hanging: 360 } : undefined,
-                  spacing: { line: spacing.line, after: 60 },
-                  children: runs(sub.inline || sub, st, bodyOpts),
-                }));
+              const subTaskPrefix = sub.checked !== undefined ? (sub.checked ? "☒ " : "☐ ") : "";
+              const subRuns = sub.inline ? runs(sub.inline, st, bodyOpts) : (Array.isArray(sub) ? runs(sub, st, bodyOpts) : []);
+              if (subTaskPrefix) {
+                subRuns.unshift(new TextRun({ text: subTaskPrefix, font: "Segoe UI Symbol, Arial Unicode MS", size: bodySize, bold: true }));
               }
+              children.push(new Paragraph({
+                ...(item.children.ordered
+                  ? { numbering: { reference: childRef, level: 0 } }
+                  : { bullet: sub.checked !== undefined ? undefined : { level: 1 } }),
+                indent: item.children.ordered ? { left: 1440, hanging: 360 } : (sub.checked !== undefined ? { left: 1440 } : undefined),
+                spacing: { line: spacing.line, after: 60 },
+                children: subRuns,
+              }));
             }
           }
         }
+        break;
+      }
+      case "callout": {
+        const ALERT_COLORS = {
+          note: "0284C7",
+          tip: "059669",
+          important: "7C3AED",
+          warning: "D97706",
+          caution: "DC2626",
+        };
+        const color = ALERT_COLORS[b.alertType] || "0284C7";
+        children.push(new Paragraph({
+          indent: { left: 360 },
+          spacing: { before: 140, after: 40 },
+          border: { left: { style: BorderStyle.SINGLE, size: 24, color, space: 8 } },
+          children: [new TextRun({ text: `${(b.alertTitle || "Note").toUpperCase()}: `, font: headingFont, size: bodySize, color, bold: true })],
+        }));
+        (b.lines || []).forEach((l) =>
+          children.push(new Paragraph({
+            indent: { left: 360 },
+            spacing: { after: 60 },
+            border: { left: { style: BorderStyle.SINGLE, size: 24, color, space: 8 } },
+            children: runs(l, st, bodyOpts),
+          }))
+        );
+        break;
+      }
+      case "math": {
+        children.push(new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 140, after: 140 },
+          shading: { fill: "F8F9FA" },
+          children: [new TextRun({ text: b.math || "", font: "Cambria Math", size: half(st.page.fontSize + 1), italics: true })],
+        }));
+        break;
+      }
+      case "footnotes": {
+        children.push(new Paragraph({
+          spacing: { before: 240, after: 80 },
+          border: { top: { style: BorderStyle.SINGLE, size: 6, color: hex(st.table.borderColor), space: 4 } },
+          children: [new TextRun({ text: "FOOTNOTES", font: headingFont, size: half(8), color: "888888", bold: true })],
+        }));
+        (b.notes || []).forEach((n) => {
+          children.push(new Paragraph({
+            spacing: { after: 40 },
+            children: [
+              new TextRun({ text: `[${n.id}] `, font: bodyFont, size: half(8.5), color: hex(st.link.color), bold: true }),
+              ...runs(n.runs, st, { ...bodyOpts, size: half(8.5) }),
+            ],
+          }));
+        });
         break;
       }
       case "table": {
