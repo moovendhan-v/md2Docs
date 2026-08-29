@@ -94,3 +94,42 @@ resource "cloudflare_dns_record" "pages_cname_dev" {
   proxied = true
   ttl     = 1
 }
+
+# md2docx subdomain custom domain setup
+resource "cloudflare_pages_domain" "md2docx" {
+  count        = var.md2docx_domain != "" ? 1 : 0
+  account_id   = var.cloudflare_account_id
+  project_name = cloudflare_pages_project.md_to_docs.name
+  name         = var.md2docx_domain
+}
+
+# DNS record for md2docx: md2docx.cybertechmind.com → md-to-docs.pages.dev
+resource "cloudflare_dns_record" "pages_cname_md2docx" {
+  count   = var.md2docx_domain != "" && var.cloudflare_zone_id != "" ? 1 : 0
+  zone_id = var.cloudflare_zone_id
+  name    = var.md2docx_record_name != "" ? var.md2docx_record_name : "md2docx"
+  content = "${cloudflare_pages_project.md_to_docs.name}.pages.dev"
+  type    = "CNAME"
+  proxied = true
+  ttl     = 1
+}
+
+# md2pdf subdomain custom domain setup
+resource "cloudflare_pages_domain" "md2pdf" {
+  count        = var.md2pdf_domain != "" ? 1 : 0
+  account_id   = var.cloudflare_account_id
+  project_name = cloudflare_pages_project.md_to_docs.name
+  name         = var.md2pdf_domain
+}
+
+# DNS record for md2pdf: md2pdf.cybertechmind.com → md-to-docs.pages.dev
+resource "cloudflare_dns_record" "pages_cname_md2pdf" {
+  count   = var.md2pdf_domain != "" && var.cloudflare_zone_id != "" ? 1 : 0
+  zone_id = var.cloudflare_zone_id
+  name    = var.md2pdf_record_name != "" ? var.md2pdf_record_name : "md2pdf"
+  content = "${cloudflare_pages_project.md_to_docs.name}.pages.dev"
+  type    = "CNAME"
+  proxied = true
+  ttl     = 1
+}
+

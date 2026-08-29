@@ -1,6 +1,6 @@
 # Moovendhan V | Backend & DevOps Cloud Engineer
 
-![Profile Photo](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/moovendhan_banner.png)
+![Profile Photo](https://github.com/user-attachments/assets/cd49f32c-6d44-418e-b7de-f26b5b78b55c)
 
 ## Tech Stack
 
@@ -35,6 +35,7 @@
   <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-aws-identity-and-access-management/default.svg" width="45" title="IAM">
   <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-rds/default.svg" width="45" title="Amazon RDS">
   <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-aurora/default.svg" width="45" title="Amazon Aurora">
+  <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-cloudwatch/default.svg" width="45" title="CloudWatch">
   <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-amazon-cloudwatch/default.svg" width="45" title="CloudWatch">
   <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-aws-cloudformation/default.svg" width="45" title="CloudFormation">
   <img src="https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/aws-aws-codebuild/default.svg" width="45" title="CodeBuild">
@@ -100,24 +101,8 @@ const md2Docs = {
 
 ## Contact & Links
 
-![Author Profile](https://cdn.jsdelivr.net/gh/moovendhan-v/md2Docs@refs/heads/main/vscode-extension/assets/moovendhan_banner.png) 
-
 - **GitHub**: [github.com/moovendhan-v](https://github.com/moovendhan-v/md2Docs)
 - **Website**: [cybertechmind.com](https://cybertechmind.com)
 
 *Generated dynamically using MD → Docs.*
 *md2docs.cybertechmind.com*
-
-## CLI Tool
-
-`md2Docs` now includes a command-line interface, allowing you to convert Markdown to styled Word documents directly from your terminal!
-
-```bash
-# Convert a markdown file to Word
-npx md2docs input.md -o output.docx
-
-# Use a specific template (e.g., modern, elegant, technical)
-npx md2docs input.md -t modern -o output.docx
-```
-
-

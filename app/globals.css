@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 24 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 10%;
+    --primary: 175 77% 26%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 60 5% 96%;
+    --secondary-foreground: 24 10% 10%;
+    --muted: 60 5% 96%;
+    --muted-foreground: 25 5% 45%;
+    --accent: 60 5% 96%;
+    --accent-foreground: 24 10% 10%;
+    --border: 20 6% 90%;
+    --input: 20 6% 90%;
+    --ring: 175 77% 26%;
+    --radius: 0.5rem;
+    --canvas: 20 6% 88%;
+  }
+
+  .dark {
+    --background: 220 15% 10%;
+    --foreground: 220 10% 92%;
+    --card: 220 14% 13%;
+    --card-foreground: 220 10% 92%;
+    --popover: 220 14% 13%;
+    --popover-foreground: 220 10% 92%;
+    --primary: 172 60% 45%;
+    --primary-foreground: 220 15% 8%;
+    --secondary: 220 12% 18%;
+    --secondary-foreground: 220 10% 92%;
+    --muted: 220 12% 18%;
+    --muted-foreground: 220 8% 60%;
+    --accent: 220 12% 20%;
+    --accent-foreground: 220 10% 92%;
+    --border: 220 12% 22%;
+    --input: 220 12% 22%;
+    --ring: 172 60% 45%;
+    --canvas: 220 15% 7%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Prevent react-resizable-panels outer wrappers from blocking flexbox shrinking */
+[data-panel] {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+/* ── Preview interactive hover highlights ─────────────────────────────────── */
+
+/* enable pointer events inside the preview */
+.preview-interactive {
+  cursor: default;
+}
+
+/* generic block hover */
+.preview-interactive h1:hover,
+.preview-interactive h2:hover,
+.preview-interactive h3:hover,
+.preview-interactive h4:hover,
+.preview-interactive h5:hover,
+.preview-interactive h6:hover,
+.preview-interactive p:hover,
+.preview-interactive pre:hover,
+.preview-interactive blockquote:hover,
+.preview-interactive ul:hover,
+.preview-interactive ol:hover,
+.preview-interactive table:hover,
+.preview-interactive a:hover,
+.preview-interactive img:hover,
+.preview-interactive hr:hover {
+  outline: 2px dashed rgba(99,102,241,0.35) !important;
+  outline-offset: 3px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* per-type accent colours on hover */
+.preview-interactive h1:hover { outline-color: rgba(99,102,241,0.55) !important; }
+.preview-interactive h2:hover,
+.preview-interactive h3:hover,
+.preview-interactive h4:hover,
+.preview-interactive h5:hover,
+.preview-interactive h6:hover { outline-color: rgba(2,132,199,0.55) !important; }
+.preview-interactive table:hover { outline-color: rgba(5,150,105,0.55) !important; }
+.preview-interactive pre:hover  { outline-color: rgba(124,58,237,0.55) !important; }
+.preview-interactive blockquote:hover { outline-color: rgba(217,119,6,0.55) !important; }
+.preview-interactive a:hover    { outline-color: rgba(14,165,233,0.55) !important; }
+.preview-interactive img:hover  { outline-color: rgba(148,163,184,0.55) !important; }
+
+/* ── Editor Markdown Syntax Highlighting ──────────────────────────────────── */
+
+.md-heading {
+  @apply text-primary font-bold;
+}
+.md-blockquote {
+  @apply text-amber-600 dark:text-amber-400 italic;
+}
+.md-code-block {
+  @apply text-purple-600 dark:text-purple-400 bg-muted/40 px-1 rounded;
+}
+.md-inline-code {
+  @apply text-rose-600 dark:text-rose-400 bg-muted/65 px-1 rounded font-semibold;
+}
+.md-list-marker {
+  @apply text-emerald-600 dark:text-emerald-400 font-bold;
+}
+.md-link {
+  @apply text-sky-600 dark:text-sky-400 underline;
+}
+.md-image {
+  @apply text-pink-600 dark:text-pink-400;
+}
+.md-html-tag {
+  @apply text-orange-600 dark:text-orange-400;
+}
+.md-hr {
+  @apply text-muted-foreground font-bold tracking-widest;
+}
+

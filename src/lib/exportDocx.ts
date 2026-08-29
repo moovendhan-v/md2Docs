@@ -1,21 +1,41 @@
-/* exportDocxNode.js
-   Node.js-compatible version of exportDocx that writes a .docx buffer
-   directly to disk using fs.writeFile — no browser DOM needed.
-   
-   Shares ALL document logic with the frontend version; only the final
-   "save to disk" step differs from the browser's anchor-download trick. */
+/* Tokens + styles → real .docx via the `docx` package.
+   Opens natively in MS Word, Google Docs, LibreOffice.
 
+   - Headings get Bookmarks; [link](#anchor) becomes an InternalHyperlink,
+     so tables of contents actually navigate inside Word.
+   - Ordered lists keep their source start number (no restart-at-1 bugs).
+   - Code blocks auto-fit their font size so long lines don't wrap badly. */
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   WidthType, BorderStyle, AlignmentType, ExternalHyperlink, InternalHyperlink,
-  Bookmark, LevelFormat, Footer, PageNumber,
+  Bookmark, LevelFormat, Footer, PageNumber, PageBreak, ImageRun,
 } from "docx";
-import { codeFontSize } from "@shared/parser";
-import { writeFile } from "fs/promises";
+import { codeFontSize } from "./parser";
+import { renderMermaidSvg } from "./mermaid";
 
 const hex = (c) => (c || "#000000").replace("#", "").toUpperCase();
-const half = (pt) => Math.round(pt * 2);
-const CM = 567;
+const half = (pt) => Math.round(pt * 2); // docx font sizes are half-points
+const CM = 567; // twips per cm
+
+/* Render a mermaid string to a PNG Uint8Array via SVG → canvas. */
+async function mermaidToPng(text) {
+  const svg = await renderMermaidSvg(text);
+  const blob = await new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth * 2;
+      canvas.height = img.naturalHeight * 2;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(2, 2);
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((b) => resolve(b), "image/png");
+    };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  });
+  const buf = await blob.arrayBuffer();
+  return new Uint8Array(buf);
+}
 
 function runs(inline, st, opts = {}) {
   const out = [];
@@ -28,7 +48,7 @@ function runs(inline, st, opts = {}) {
       bold: opts.bold || r.bold,
       italics: opts.italics || r.italic,
     };
-    const textParts = (r.text || "").split("\n");
+    const textParts = r.text.split("\n");
     switch (r.t) {
       case "code":
         textParts.forEach((part, idx) => {
@@ -40,21 +60,16 @@ function runs(inline, st, opts = {}) {
         textParts.forEach((part, idx) => {
           if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
           const child = new TextRun({ ...common, text: part, color: hex(st.link.color), underline: {} });
-          if (r.href && r.href.startsWith("#")) {
+          if (r.href.startsWith("#")) {
             out.push(new InternalHyperlink({ anchor: r.href.slice(1), children: [child] }));
           } else {
-            out.push(new ExternalHyperlink({ link: r.href || "#", children: [child] }));
+            out.push(new ExternalHyperlink({ link: r.href, children: [child] }));
           }
         });
         break;
       }
       case "image":
-      case "linked-image":
         out.push(new TextRun({ ...common, text: `[Image: ${r.text || "Photo"}]`, color: "888888", italics: true }));
-        break;
-      case "html":
-        // Raw HTML blocks are skipped in docx (no DOM renderer available)
-        out.push(new TextRun({ ...common, text: "", }));
         break;
       default:
         textParts.forEach((part, idx) => {
@@ -70,7 +85,7 @@ function runs(inline, st, opts = {}) {
 
 const ALIGN = { left: AlignmentType.LEFT, center: AlignmentType.CENTER, right: AlignmentType.RIGHT };
 
-export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
+export async function exportDocx(blocks, st, fileName, opts = {}) {
   const bodyFont = st.page.fontFamily.split(",")[0].replace(/['"]/g, "").trim();
   const bodySize = half(st.page.fontSize);
   const bodyColor = hex(st.page.textColor);
@@ -87,8 +102,15 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
     numbering.config.push({
       reference: ref,
       levels: [
-        { level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.START, start, style: { paragraph: { indent: { left: 720, hanging: 360 } } } },
-        { level: 1, format: LevelFormat.DECIMAL, text: "%2.", alignment: AlignmentType.START, style: { paragraph: { indent: { left: 1440, hanging: 360 } } } },
+        {
+          level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.START,
+          start,
+          style: { paragraph: { indent: { left: 720, hanging: 360 } } },
+        },
+        {
+          level: 1, format: LevelFormat.DECIMAL, text: "%2.", alignment: AlignmentType.START,
+          style: { paragraph: { indent: { left: 1440, hanging: 360 } } },
+        },
       ],
     });
     return ref;
@@ -101,37 +123,32 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
     ? st.title.fontFamily.split(",")[0].replace(/['"]/g, "").trim()
     : headingFont;
 
-  let tocAdded = false;
-  const insertTOC = () => {
-    if (!opts.showTOC || tocAdded) return;
-    tocAdded = true;
-    children.push(new Paragraph({
-      spacing: { before: 240, after: 120 },
-      children: [new TextRun({ text: "Table of Contents", font: headingFont, size: half(st.heading.fontSize || 16), color: hex(st.heading.color), bold: true })]
-    }));
-    for (const bh of blocks) {
-      if (bh.type === "heading" && !bh.isTitle) {
-        const indent = (bh.level - 1) * 360;
-        children.push(new Paragraph({
-          indent: { left: indent },
-          spacing: { line: 240, after: 60 },
-          children: [
-            new InternalHyperlink({
-              anchor: bh.id,
-              children: [
-                new TextRun({ text: bh.inline.map(r => r.text).join(""), font: bodyFont, size: bodySize, color: hex(st.link.color), underline: {} })
-              ]
-            })
-          ]
-        }));
-      }
-    }
-    children.push(new Paragraph({ pageBreakBefore: true, children: [] }));
-  };
-
   for (const b of blocks) {
     switch (b.type) {
+      case "toc": {
+        // Render a text-based TOC for Word export (Word will know how to format it)
+        const tocHeadings = blocks.filter((h) => h.type === "heading" && !h.isTitle);
+        if (tocHeadings.length > 0) {
+          children.push(new Paragraph({
+            spacing: { after: 80 },
+            children: [new TextRun({ text: "Table of Contents", font: bodyFont, size: half(st.heading.fontSize), color: hex(st.heading.color), bold: true })],
+          }));
+          for (const h of tocHeadings) {
+            const depth = Math.max(0, h.level - 2);
+            const text = (h.inline || []).map((r) => r.text || "").join("");
+            children.push(new Paragraph({
+              indent: { left: depth * 360 },
+              spacing: { after: 40 },
+              children: [new TextRun({ text, font: bodyFont, size: bodySize, color: bodyColor, bold: h.level === 2 })],
+            }));
+          }
+          children.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
+        }
+        break;
+      }
       case "heading": {
+
+        // bookmark the heading so #anchor links can jump to it
         const mk = (opts) => [new Bookmark({ id: b.id, children: runs(b.inline, st, opts) })];
         if (b.isTitle) {
           children.push(new Paragraph({
@@ -142,7 +159,6 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
               : undefined,
             children: mk({ font: titleFont, size: half(st.title.fontSize), color: hex(st.title.color), bold: true, allCaps: st.title.uppercase }),
           }));
-          insertTOC();
         } else {
           const size = b.level <= 2 ? st.heading.fontSize : Math.max(st.heading.fontSize - 2, st.page.fontSize + 1);
           children.push(new Paragraph({
@@ -154,9 +170,6 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
       }
       case "paragraph":
         children.push(new Paragraph({ spacing, children: runs(b.inline, st, bodyOpts) }));
-        break;
-      case "html":
-        // Skip raw HTML blocks in docx (no DOM)
         break;
       case "list": {
         const ref = b.ordered ? addOrderedRef(b.start || 1) : null;
@@ -170,7 +183,9 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
             const childRef = item.children.ordered ? addOrderedRef(item.children.start || 1) : null;
             for (const sub of item.children.items) {
               children.push(new Paragraph({
-                ...(item.children.ordered ? { numbering: { reference: childRef, level: 0 } } : { bullet: { level: 1 } }),
+                ...(item.children.ordered
+                  ? { numbering: { reference: childRef, level: 0 } }
+                  : { bullet: { level: 1 } }),
                 indent: item.children.ordered ? { left: 1440, hanging: 360 } : undefined,
                 spacing: { line: spacing.line, after: 60 },
                 children: runs(sub, st, bodyOpts),
@@ -183,22 +198,33 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
       case "table": {
         const numCols = b.headers.length || 1;
         const colWidthPercent = 100 / numCols;
+
         const cell = (inline, isHeader, striped) =>
           new TableCell({
             width: { size: colWidthPercent, type: WidthType.PERCENTAGE },
-            shading: isHeader ? { fill: hex(st.table.headerBg) } : striped ? { fill: hex(st.table.stripeColor) } : undefined,
+            shading: isHeader
+              ? { fill: hex(st.table.headerBg) }
+              : striped ? { fill: hex(st.table.stripeColor) } : undefined,
             margins: { top: 90, bottom: 90, left: 140, right: 140 },
             children: [new Paragraph({
-              children: runs(inline, st, { font: bodyFont, size: bodySize, color: isHeader ? hex(st.table.headerColor) : bodyColor, bold: isHeader }),
+              children: runs(inline, st, {
+                font: bodyFont, size: bodySize,
+                color: isHeader ? hex(st.table.headerColor) : bodyColor,
+                bold: isHeader,
+              }),
             })],
           });
+        const headerRow = new TableRow({ tableHeader: true, children: b.headers.map((h) => cell(h, true, false)) });
+        const bodyRows = b.rows.map((r, ri) =>
+          new TableRow({ children: r.map((c) => cell(c, false, st.table.striped && ri % 2 === 1)) })
+        );
         children.push(new Table({
           width: { size: 100, type: WidthType.PERCENTAGE },
-          borders: { top: border, bottom: border, left: border, right: border, insideHorizontal: border, insideVertical: border },
-          rows: [
-            new TableRow({ tableHeader: true, children: b.headers.map((h) => cell(h, true, false)) }),
-            ...b.rows.map((r, ri) => new TableRow({ children: r.map((c) => cell(c, false, st.table.striped && ri % 2 === 1)) })),
-          ],
+          borders: {
+            top: border, bottom: border, left: border, right: border,
+            insideHorizontal: border, insideVertical: border,
+          },
+          rows: [headerRow, ...bodyRows],
         }));
         children.push(new Paragraph({ spacing: { after: 60 }, children: [] }));
         break;
@@ -227,7 +253,10 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
       }
       case "hr":
         if (opts.hrPageBreak !== false) {
-          children.push(new Paragraph({ pageBreakBefore: true, children: [] }));
+          children.push(new Paragraph({
+            pageBreakBefore: true,
+            children: [],
+          }));
         } else {
           children.push(new Paragraph({
             border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: hex(st.table.borderColor), space: 1 } },
@@ -236,73 +265,89 @@ export async function exportDocxToFile(blocks, st, outputPath, opts = {}) {
           }));
         }
         break;
-      case "mermaid":
-        children.push(new Paragraph({
-          spacing: { before: 60, after: 60 },
-          border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC", space: 4 } },
-          children: [new TextRun({ text: `[Mermaid Diagram]`, color: "888888", italics: true, font: "Consolas" })],
-        }));
+      case "mermaid": {
+        try {
+          const pngData = await mermaidToPng(b.text);
+          children.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 120, after: 120 },
+            children: [new ImageRun({ data: pngData, transformation: { width: 400, height: 300 }, type: "png" })],
+          }));
+        } catch {
+          children.push(new Paragraph({
+            spacing: { before: 60, after: 60 },
+            children: [new TextRun({ text: "[Mermaid diagram]", color: "999999", italics: true })],
+          }));
+        }
         break;
+      }
       default:
         break;
     }
   }
 
-  // Prepend TOC if requested but not yet added
-  if (opts.showTOC && !tocAdded) {
-    const tocChildren = [];
-    tocChildren.push(new Paragraph({
-      spacing: { before: 240, after: 120 },
-      children: [new TextRun({ text: "Table of Contents", font: headingFont, size: half(st.heading.fontSize || 16), color: hex(st.heading.color), bold: true })]
-    }));
-    for (const bh of blocks) {
-      if (bh.type === "heading" && !bh.isTitle) {
-        const indent = (bh.level - 1) * 360;
-        tocChildren.push(new Paragraph({
-          indent: { left: indent },
-          spacing: { line: 240, after: 60 },
-          children: [
-            new InternalHyperlink({
-              anchor: bh.id,
-              children: [
-                new TextRun({ text: bh.inline.map(r => r.text).join(""), font: bodyFont, size: bodySize, color: hex(st.link.color), underline: {} })
-              ]
-            })
-          ]
-        }));
-      }
-    }
-    tocChildren.push(new Paragraph({ pageBreakBefore: true, children: [] }));
-    children.unshift(...tocChildren);
-  }
+  let topMargin = 2 * CM;
+  let bottomMargin = 2 * CM;
+  let leftMargin = 2.2 * CM;
+  let rightMargin = 2.2 * CM;
 
-  let topMargin = 2 * CM, bottomMargin = 2 * CM, leftMargin = 2.2 * CM, rightMargin = 2.2 * CM;
-  if (st.page.margin === "narrow") { topMargin = 1 * CM; bottomMargin = 1 * CM; leftMargin = 1.2 * CM; rightMargin = 1.2 * CM; }
-  else if (st.page.margin === "wide") { topMargin = 2.5 * CM; bottomMargin = 2.5 * CM; leftMargin = 3 * CM; rightMargin = 3 * CM; }
+  if (st.page.margin === "narrow") {
+    topMargin = 1 * CM;
+    bottomMargin = 1 * CM;
+    leftMargin = 1.2 * CM;
+    rightMargin = 1.2 * CM;
+  } else if (st.page.margin === "wide") {
+    topMargin = 2.5 * CM;
+    bottomMargin = 2.5 * CM;
+    leftMargin = 3 * CM;
+    rightMargin = 3 * CM;
+  }
 
   const doc = new Document({
     numbering: numbering.config.length ? numbering : undefined,
     styles: { default: { document: { run: { font: bodyFont, size: bodySize, color: bodyColor } } } },
     sections: [{
-      properties: { page: { margin: { top: topMargin, bottom: bottomMargin, left: leftMargin, right: rightMargin } } },
-      footers: opts.showPageNumbers !== false ? {
+      properties: {
+        page: { margin: { top: topMargin, bottom: bottomMargin, left: leftMargin, right: rightMargin } },
+      },
+      footers: {
         default: new Footer({
-          children: [new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-              new TextRun({ text: "Page ", font: bodyFont, size: half(9), color: "888888" }),
-              new TextRun({ children: [PageNumber.CURRENT], font: bodyFont, size: half(9), color: "888888" }),
-              new TextRun({ text: " of ", font: bodyFont, size: half(9), color: "888888" }),
-              new TextRun({ children: [PageNumber.TOTAL_PAGES], font: bodyFont, size: half(9), color: "888888" }),
-            ],
-          })],
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({
+                  text: "Page ",
+                  font: bodyFont,
+                  size: half(9),
+                  color: "888888",
+                }),
+                new TextRun({
+                  children: [PageNumber.CURRENT],
+                  font: bodyFont,
+                  size: half(9),
+                  color: "888888",
+                }),
+                new TextRun({
+                  text: " of ",
+                  font: bodyFont,
+                  size: half(9),
+                  color: "888888",
+                }),
+                new TextRun({
+                  children: [PageNumber.TOTAL_PAGES],
+                  font: bodyFont,
+                  size: half(9),
+                  color: "888888",
+                }),
+              ],
+            }),
+          ],
         }),
-      } : undefined,
+      },
       children,
     }],
   });
 
-  // ── Node.js save: write buffer to disk (no browser DOM needed) ──
-  const buffer = await Packer.toBuffer(doc);
-  await writeFile(outputPath, buffer);
+  return doc;
 }

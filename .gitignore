@@ -2,3 +2,14 @@ node_modules/
 dist
 .DS_Store
 *.local
+vscode-extension/md-to-docs-*
+
+# Next.js & outputs
+/.next/
+/out/
+/output/
+/public/downloads/
+
+# Env files
+.env
+.env*.local
