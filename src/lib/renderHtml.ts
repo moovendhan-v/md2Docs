@@ -146,7 +146,6 @@ function listHtml(list, st, depth = 0) {
           `</li>`;
       }
 
-      const marker = list.ordered ? `${start + idx}.` : bullet;
       return `<li style="display:flex;align-items:flex-start;margin:3pt 0;">` +
         `<span style="display:inline-flex;align-items:center;width:18pt;flex-shrink:0;user-select:none;line-height:inherit;">${marker}</span>` +
         `<div style="flex:1;min-width:0;">${inlineHtml(inline, st)}${child}</div>` +
