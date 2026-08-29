@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import {
   RotateCcw, ChevronDown, ChevronRight, FileText, Type, Heading2,
-  Table2, Code2, Quote, Link2, Layout, Hash, List,
+  Table2, Code2, Quote, Link2, Layout, Hash, List, BookOpen,
 } from "lucide-react";
 
 
@@ -413,6 +413,70 @@ export default function CustomizePanel() {
           <ColorField label="Text color" value={st.blockquote.color} onChange={(v) => u("blockquote", "color", v)} />
           <Divider />
           <ToggleField label="Italic text" checked={st.blockquote.italic} onChange={(v) => u("blockquote", "italic", v)} />
+        </Section>
+
+        {/* ── COVER PAGE ── */}
+        <Section icon={BookOpen} title="Cover Page Generator">
+          <ToggleField
+            label="Enable Cover Page"
+            checked={!!st.coverPage?.enabled}
+            onChange={(v) => u("coverPage", "enabled", v)}
+          />
+          {st.coverPage?.enabled && (
+            <>
+              <Divider />
+              <SelectField
+                label="Layout Preset"
+                value={st.coverPage?.template || "executive"}
+                options={[
+                  { label: "Executive / Corporate", value: "executive" },
+                  { label: "Modern Tech / Engineering", value: "modern" },
+                  { label: "Academic / Research", value: "academic" },
+                ]}
+                onChange={(v) => u("coverPage", "template", v)}
+              />
+              <div className="space-y-1.5 py-1">
+                <span className="text-xs text-muted-foreground">Subtitle</span>
+                <input
+                  type="text"
+                  placeholder="Enterprise Technical Report"
+                  value={st.coverPage?.subtitle || ""}
+                  onChange={(e) => u("coverPage", "subtitle", e.target.value)}
+                  className="w-full rounded border border-input bg-background px-2.5 py-1 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div className="space-y-1.5 py-1">
+                <span className="text-xs text-muted-foreground">Organization</span>
+                <input
+                  type="text"
+                  placeholder="Acme Cloud Technologies"
+                  value={st.coverPage?.organization || ""}
+                  onChange={(e) => u("coverPage", "organization", e.target.value)}
+                  className="w-full rounded border border-input bg-background px-2.5 py-1 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div className="space-y-1.5 py-1">
+                <span className="text-xs text-muted-foreground">Version / Release</span>
+                <input
+                  type="text"
+                  placeholder="v1.0.0"
+                  value={st.coverPage?.version || ""}
+                  onChange={(e) => u("coverPage", "version", e.target.value)}
+                  className="w-full rounded border border-input bg-background px-2.5 py-1 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div className="space-y-1.5 py-1">
+                <span className="text-xs text-muted-foreground">Executive Summary / Abstract</span>
+                <textarea
+                  rows={3}
+                  placeholder="Summary of the document..."
+                  value={st.coverPage?.abstract || ""}
+                  onChange={(e) => u("coverPage", "abstract", e.target.value)}
+                  className="w-full rounded border border-input bg-background p-2 text-xs outline-none focus:border-primary resize-none"
+                />
+              </div>
+            </>
+          )}
         </Section>
 
         {/* ── LINKS ── */}

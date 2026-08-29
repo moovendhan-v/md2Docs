@@ -79,10 +79,25 @@ function listHtml(list, st, depth = 0) {
   const items = list.items
     .map((it, idx) => {
       const inline = it.inline || it;
-      const marker = list.ordered ? `${start + idx}.` : bullet;
       const child = it.children
         ? listHtml({ ordered: it.children.ordered, start: it.children.start, items: it.children.items }, st, depth + 1)
         : "";
+
+      if (it.isTask) {
+        const checkBg = it.checked ? "#10b981" : "#ffffff";
+        const checkBorder = it.checked ? "#059669" : "#cbd5e1";
+        const checkIcon = it.checked
+          ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+          : "";
+        const textStyle = it.checked ? "color:#334155;font-weight:500;" : "color:#475569;";
+
+        return `<li style="display:flex;align-items:center;margin:3.5pt 0;">` +
+          `<span style="display:inline-flex;align-items:center;justify-content:center;width:12.5pt;height:12.5pt;margin-right:7pt;background:${checkBg};border:1.5px solid ${checkBorder};border-radius:3.5px;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,0.06);">${checkIcon}</span>` +
+          `<div style="flex:1;min-width:0;${textStyle}">${inlineHtml(inline, st)}${child}</div>` +
+          `</li>`;
+      }
+
+      const marker = list.ordered ? `${start + idx}.` : bullet;
       return `<li style="display:flex;align-items:flex-start;margin:3pt 0;">` +
         `<span style="display:inline-block;width:18pt;flex-shrink:0;user-select:none;line-height:inherit;">${marker}</span>` +
         `<div style="flex:1;min-width:0;">${inlineHtml(inline, st)}${child}</div>` +
@@ -298,10 +313,25 @@ export function blockToHtml(block, st, opts = {}, overrides = {}) {
       const items = block.items
         .map((it, idx) => {
           const inline = it.inline || it;
-          const marker = block.ordered ? `${start + idx}.` : bullet;
           const child = it.children
             ? listHtml({ ordered: it.children.ordered, start: it.children.start, items: it.children.items }, st, 1)
             : "";
+
+          if (it.isTask) {
+            const checkBg = it.checked ? "#10b981" : "#ffffff";
+            const checkBorder = it.checked ? "#059669" : "#cbd5e1";
+            const checkIcon = it.checked
+              ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+              : "";
+            const textStyle = it.checked ? "color:#334155;font-weight:500;" : "color:#475569;";
+
+            return `<li style="display:flex;align-items:center;margin:4pt 0;">` +
+              `<span style="display:inline-flex;align-items:center;justify-content:center;width:13pt;height:13pt;margin-right:8pt;background:${checkBg};border:1.5px solid ${checkBorder};border-radius:4px;flex-shrink:0;box-shadow:0 1px 2px rgba(0,0,0,0.06);">${checkIcon}</span>` +
+              `<div style="flex:1;min-width:0;${textStyle}">${inlineHtml(inline, st)}${child}</div>` +
+              `</li>`;
+          }
+
+          const marker = block.ordered ? `${start + idx}.` : bullet;
           return `<li style="display:flex;align-items:flex-start;margin:3pt 0;">` +
             `<span style="display:inline-block;width:18pt;flex-shrink:0;user-select:none;line-height:inherit;">${marker}</span>` +
             `<div style="flex:1;min-width:0;">${inlineHtml(inline, st)}${child}</div>` +

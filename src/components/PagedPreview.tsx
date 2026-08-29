@@ -4,6 +4,7 @@ import { useDocStore } from "@/store/useDocStore";
 import { getPageGeometry } from "@/lib/page";
 import { baseStyle } from "@/lib/renderHtml";
 import { renderMermaidDiagrams } from "@/lib/mermaid";
+import { renderCoverPageHtml } from "@/lib/coverPage";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, LayoutList, LayoutGrid } from "lucide-react";
 import ElementInspector from "@/components/ElementInspector";
@@ -187,6 +188,14 @@ export default function PagedPreview({ html }) {
       current.push(b.outerHTML);
     });
     closePage();
+
+    if (styles.coverPage?.enabled) {
+      const coverHtml = renderCoverPageHtml(styles.coverPage, styles, styles.docMeta || {}, geom);
+      if (coverHtml) {
+        result.unshift(coverHtml);
+      }
+    }
+
     setPages(result.length ? result : [""]);
   }, [html, styles, setPages, geom.contentHeight, mermaidTick, showPageNumbers, layoutTick]);
 
