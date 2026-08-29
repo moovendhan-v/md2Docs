@@ -156,6 +156,10 @@ export default function CustomizePanel() {
   const setHrPageBreak = useDocStore((s) => s.setHrPageBreak);
   const tocOptions = useDocStore((s) => s.tocOptions);
   const updateTocOption = useDocStore((s) => s.updateTocOption);
+  const documentMeta = useDocStore((s) => s.documentMeta);
+  const setDocumentMeta = useDocStore((s) => s.setDocumentMeta);
+  const customCss = useDocStore((s) => s.customCss);
+  const setCustomCss = useDocStore((s) => s.setCustomCss);
   const markdown = useDocStore((s) => s.markdown);
   const setMarkdown = useDocStore((s) => s.setMarkdown);
   const st = styles;
@@ -415,10 +419,172 @@ export default function CustomizePanel() {
           <ToggleField label="Italic text" checked={st.blockquote.italic} onChange={(v) => u("blockquote", "italic", v)} />
         </Section>
 
-        {/* ── LINKS ── */}
-        <Section icon={Link2} title="Links">
-          <ColorField label="Color" value={st.link.color} onChange={(v) => u("link", "color", v)} />
-          <ToggleField label="Underline" checked={st.link.underline !== false} onChange={(v) => u("link", "underline", v)} />
+        {/* ── RUNNING HEADER & FOOTER ── */}
+        <Section icon={Layout} title="Header & Footer">
+          <ToggleField
+            label="Running Header"
+            checked={!!st.header?.enabled}
+            onChange={(v) => u("header", "enabled", v)}
+            description="Display header text / logo on every page"
+          />
+          {st.header?.enabled && (
+            <div className="mt-2 space-y-2 rounded-md bg-muted/30 p-2 border border-border/50">
+              <div className="py-1">
+                <Label className="text-xs text-muted-foreground">Header Left (Supports Placeholders)</Label>
+                <input
+                  type="text"
+                  value={st.header?.leftText ?? "{{title}}"}
+                  placeholder="{{title}}"
+                  onChange={(e) => u("header", "leftText", e.target.value)}
+                  className="mt-1 w-full rounded border border-input bg-background px-2.5 py-1 text-xs"
+                />
+              </div>
+              <div className="py-1">
+                <Label className="text-xs text-muted-foreground">Header Right</Label>
+                <input
+                  type="text"
+                  value={st.header?.rightText ?? "{{organization}}"}
+                  placeholder="{{organization}}"
+                  onChange={(e) => u("header", "rightText", e.target.value)}
+                  className="mt-1 w-full rounded border border-input bg-background px-2.5 py-1 text-xs"
+                />
+              </div>
+              <div className="py-1">
+                <Label className="text-xs text-muted-foreground">Logo URL (Optional)</Label>
+                <input
+                  type="text"
+                  value={st.header?.logoUrl || ""}
+                  placeholder="https://example.com/logo.png"
+                  onChange={(e) => u("header", "logoUrl", e.target.value)}
+                  className="mt-1 w-full rounded border border-input bg-background px-2.5 py-1 text-xs"
+                />
+              </div>
+              <ToggleField label="Divider line" checked={st.header?.showRule !== false} onChange={(v) => u("header", "showRule", v)} />
+            </div>
+          )}
+
+          <Divider />
+
+          <ToggleField
+            label="Running Footer"
+            checked={!!st.footer?.enabled}
+            onChange={(v) => u("footer", "enabled", v)}
+            description="Display custom footer notices"
+          />
+          {st.footer?.enabled && (
+            <div className="mt-2 space-y-2 rounded-md bg-muted/30 p-2 border border-border/50">
+              <div className="py-1">
+                <Label className="text-xs text-muted-foreground">Footer Left</Label>
+                <input
+                  type="text"
+                  value={st.footer?.leftText ?? "Confidential & Proprietary"}
+                  placeholder="Confidential"
+                  onChange={(e) => u("footer", "leftText", e.target.value)}
+                  className="mt-1 w-full rounded border border-input bg-background px-2.5 py-1 text-xs"
+                />
+              </div>
+              <ToggleField label="Divider line" checked={!!st.footer?.showRule} onChange={(v) => u("footer", "showRule", v)} />
+            </div>
+          )}
+        </Section>
+
+        {/* ── SECURITY WATERMARK ── */}
+        <Section icon={Quote} title="Watermark">
+          <ToggleField
+            label="Enable Watermark"
+            checked={!!st.watermark?.enabled}
+            onChange={(v) => u("watermark", "enabled", v)}
+            description="Diagonal security / draft text across pages"
+          />
+          {st.watermark?.enabled && (
+            <div className="mt-2 space-y-2 rounded-md bg-muted/30 p-2 border border-border/50">
+              <div className="py-1">
+                <Label className="text-xs text-muted-foreground">Watermark Text</Label>
+                <input
+                  type="text"
+                  value={st.watermark?.text ?? "CONFIDENTIAL"}
+                  placeholder="CONFIDENTIAL / DRAFT"
+                  onChange={(e) => u("watermark", "text", e.target.value)}
+                  className="mt-1 w-full rounded border border-input bg-background px-2.5 py-1 text-xs"
+                />
+              </div>
+              <SliderField
+                label="Opacity"
+                value={st.watermark?.opacity ?? 0.08}
+                min={0.02}
+                max={0.35}
+                step={0.01}
+                unit=""
+                onChange={(v) => u("watermark", "opacity", v)}
+              />
+              <SliderField
+                label="Angle"
+                value={st.watermark?.angle ?? -35}
+                min={-90}
+                max={90}
+                step={5}
+                unit="°"
+                onChange={(v) => u("watermark", "angle", v)}
+              />
+              <SliderField
+                label="Font size"
+                value={st.watermark?.fontSize ?? 54}
+                min={24}
+                max={90}
+                step={2}
+                unit="pt"
+                onChange={(v) => u("watermark", "fontSize", v)}
+              />
+              <ColorField label="Color" value={st.watermark?.color || "#000000"} onChange={(v) => u("watermark", "color", v)} />
+            </div>
+          )}
+        </Section>
+
+        {/* ── DOCUMENT METADATA ── */}
+        <Section icon={FileText} title="Document Meta & Placeholders">
+          <div className="space-y-2 text-xs">
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Document Title <code className="text-[10px] bg-muted px-1 rounded">&#123;&#123;title&#125;&#125;</code></Label>
+              <input
+                type="text"
+                value={documentMeta?.title || ""}
+                onChange={(e) => setDocumentMeta({ title: e.target.value })}
+                className="mt-1 w-full rounded border border-input bg-background px-2.5 py-1 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Author <code className="text-[10px] bg-muted px-1 rounded">&#123;&#123;author&#125;&#125;</code></Label>
+              <input
+                type="text"
+                value={documentMeta?.author || ""}
+                onChange={(e) => setDocumentMeta({ author: e.target.value })}
+                className="mt-1 w-full rounded border border-input bg-background px-2.5 py-1 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Organization <code className="text-[10px] bg-muted px-1 rounded">&#123;&#123;organization&#125;&#125;</code></Label>
+              <input
+                type="text"
+                value={documentMeta?.organization || ""}
+                onChange={(e) => setDocumentMeta({ organization: e.target.value })}
+                className="mt-1 w-full rounded border border-input bg-background px-2.5 py-1 text-xs"
+              />
+            </div>
+          </div>
+        </Section>
+
+        {/* ── CUSTOM CSS ── */}
+        <Section icon={Code2} title="Custom CSS">
+          <p className="text-[11px] text-muted-foreground mb-1.5">
+            Inject custom CSS rules directly into the preview and PDF renderer.
+          </p>
+          <textarea
+            value={customCss || ""}
+            onChange={(e) => setCustomCss(e.target.value)}
+            placeholder=".math-block { border-radius: 8px; }"
+            rows={5}
+            className="w-full rounded border border-input bg-background p-2 font-mono text-[11px] leading-relaxed"
+          />
         </Section>
 
       </div>

@@ -29,6 +29,14 @@ export async function renderMermaidDiagrams(container) {
       const id = `mermaid-${counter++}`;
       const { svg } = await mermaid.render(id, code);
       el.innerHTML = svg;
+      const svgEl = el.querySelector("svg");
+      if (svgEl) {
+        svgEl.style.maxWidth = "100%";
+        svgEl.style.height = "auto";
+        svgEl.style.maxHeight = "460px";
+        svgEl.style.display = "block";
+        svgEl.style.margin = "0 auto";
+      }
       el.classList.add("rendered");
     } catch (err) {
       el.innerHTML = `<pre style="color:red;font-size:11px;">${err.message || "Mermaid render error"}</pre>`;

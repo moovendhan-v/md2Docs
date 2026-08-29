@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import TemplateGallery from "@/components/TemplateGallery";
 

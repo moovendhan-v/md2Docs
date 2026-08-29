@@ -157,6 +157,18 @@ export async function renderPdf(pages, styles) {
     const pageNumColor    = styles.page.pageNumberColor  || "#888888";
     const pageNumSize     = styles.page.pageNumberSize   || 8;
 
+    const docMeta = styles.documentMeta || {};
+    const interpolate = (str = "", pageIdx = 0) => {
+      return str
+        .replace(/{{page}}/gi, String(pageIdx + 1))
+        .replace(/{{totalPages}}/gi, String(pages.length))
+        .replace(/{{title}}|{{docTitle}}/gi, docMeta.title || styles.title?.text || "Document")
+        .replace(/{{author}}/gi, docMeta.author || "")
+        .replace(/{{organization}}|{{org}}/gi, docMeta.organization || "")
+        .replace(/{{date}}/gi, docMeta.date || new Date().toLocaleDateString())
+        .replace(/{{version}}/gi, docMeta.version || "");
+    };
+
     const getLabel = (i) => {
       const x = i + 1; const y = pages.length;
       switch (pageNumFormat) {
@@ -171,6 +183,11 @@ export async function renderPdf(pages, styles) {
     const borderColor = styles.page.borderColor || "#cccccc";
     const borderWidth = styles.page.borderWidth || 1;
     const borderInset = styles.page.borderInset || 8;
+
+    // Header & Footer configs
+    const headerCfg = styles.header || {};
+    const footerCfg = styles.footer || {};
+    const watermarkCfg = styles.watermark || {};
 
     for (let i = 0; i < pages.length; i++) {
       const pageEl = document.createElement("div");
@@ -194,28 +211,84 @@ export async function renderPdf(pages, styles) {
         pageEl.appendChild(borderOverlay);
       }
 
+      // Security / Draft Watermark Overlay
+      if (watermarkCfg.enabled && watermarkCfg.text) {
+        const wmEl = document.createElement("div");
+        const angle = watermarkCfg.angle ?? -35;
+        const opacity = watermarkCfg.opacity ?? 0.08;
+        const wmColor = watermarkCfg.color || "#000000";
+        const wmSize = watermarkCfg.fontSize || 52;
+        wmEl.style.cssText =
+          `position:absolute;top:50%;left:50%;` +
+          `transform:translate(-50%,-50%) rotate(${angle}deg);` +
+          `font-size:${wmSize}pt;font-weight:bold;color:${wmColor};opacity:${opacity};` +
+          `font-family:${styles.page.fontFamily};text-transform:uppercase;` +
+          `letter-spacing:0.1em;pointer-events:none;user-select:none;white-space:nowrap;z-index:1;`;
+        wmEl.textContent = watermarkCfg.text;
+        pageEl.appendChild(wmEl);
+      }
+
+      // Running Header
+      if (headerCfg.enabled) {
+        const headerEl = document.createElement("div");
+        const headerRule = headerCfg.showRule !== false ? `border-bottom:1px solid ${borderColor};padding-bottom:4pt;` : "";
+        headerEl.style.cssText =
+          `position:absolute;top:0;left:0;right:0;height:${geom.marginTop}px;` +
+          `display:flex;align-items:center;justify-content:space-between;` +
+          `padding-left:${geom.marginLeft}px;padding-right:${geom.marginRight}px;` +
+          `font-size:8pt;color:#888888;font-family:${styles.page.fontFamily};` +
+          `${headerRule}`;
+
+        const leftSpan = document.createElement("div");
+        leftSpan.style.cssText = "display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%;";
+        if (headerCfg.logoUrl) {
+          const logoImg = document.createElement("img");
+          logoImg.src = headerCfg.logoUrl;
+          logoImg.style.cssText = "height:16px;object-fit:contain;";
+          leftSpan.appendChild(logoImg);
+        }
+        const leftTextSpan = document.createElement("span");
+        leftTextSpan.textContent = interpolate(headerCfg.leftText || "{{title}}", i);
+        leftSpan.appendChild(leftTextSpan);
+
+        const rightSpan = document.createElement("div");
+        rightSpan.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:45%;text-align:right;";
+        rightSpan.textContent = interpolate(headerCfg.rightText || "{{organization}}", i);
+
+        headerEl.appendChild(leftSpan);
+        headerEl.appendChild(rightSpan);
+        pageEl.appendChild(headerEl);
+      }
+
       // Inline images BEFORE setting innerHTML so no network requests are made
       const processedHtml = inlineImages(pages[i], imageCache);
 
       const contentDiv = document.createElement("div");
-      contentDiv.style.cssText = baseStyle(styles);
+      contentDiv.style.cssText = baseStyle(styles) + "position:relative;z-index:2;";
       contentDiv.innerHTML = processedHtml;
       pageEl.appendChild(contentDiv);
 
-      // Page number footer
-      if (showPageNumbers) {
+      // Running Footer
+      if (footerCfg.enabled || showPageNumbers) {
         const footer = document.createElement("div");
-        const alignMap: any = { left: "flex-start", center: "center", right: "flex-end" };
+        const footerRule = footerCfg.showRule ? `border-top:1px solid ${borderColor};padding-top:4pt;` : "";
         footer.style.cssText =
           `position:absolute;bottom:0;left:0;right:0;height:${geom.marginBottom}px;` +
-          `display:flex;align-items:center;justify-content:${alignMap[pageNumAlign] || "center"};` +
-          `padding-left:${geom.marginLeft}px;padding-right:${geom.marginRight}px;`;
-        const span = document.createElement("span");
-        span.style.cssText =
-          `color:${pageNumColor};font-size:${pageNumSize}pt;` +
-          `font-family:${styles.page.fontFamily};line-height:1;letter-spacing:0.04em;`;
-        span.textContent = getLabel(i);
-        footer.appendChild(span);
+          `display:flex;align-items:center;justify-content:space-between;` +
+          `padding-left:${geom.marginLeft}px;padding-right:${geom.marginRight}px;` +
+          `font-size:${pageNumSize}pt;color:${pageNumColor};font-family:${styles.page.fontFamily};` +
+          `${footerRule}`;
+
+        const leftFooter = document.createElement("div");
+        leftFooter.style.cssText = "font-size:7.5pt;color:#888888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:45%;";
+        leftFooter.textContent = footerCfg.enabled ? interpolate(footerCfg.leftText || "Confidential", i) : "";
+
+        const rightFooter = document.createElement("div");
+        rightFooter.style.cssText = "font-size:${pageNumSize}pt;letter-spacing:0.04em;margin-left:auto;";
+        rightFooter.textContent = showPageNumbers ? getLabel(i) : (footerCfg.enabled ? interpolate(footerCfg.rightText || "", i) : "");
+
+        footer.appendChild(leftFooter);
+        footer.appendChild(rightFooter);
         pageEl.appendChild(footer);
       }
 

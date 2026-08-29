@@ -1,36 +1,48 @@
 /* Markdown → block tokens with inline runs.
-   One parser feeds three renderers: HTML preview, .docx export, PDF export.
+   One parser feeds three renderers: HTML preview, .docx export, PDF export. */
 
-   Inline runs are flat with formatting flags, so nesting like
-   **`git pull` fails** (code inside bold) parses correctly:
-   { t:"code", text:"git pull", bold:true }, { t:"text", text:" fails", bold:true }
-
-   Raw HTML blocks (lines starting with < that contain block-level tags) are
-   passed through verbatim so GitHub-flavored HTML like <div align="center">,
-   <img ...>, <table> etc. render correctly in the preview. */
-
-// Matches: ![alt](src){style} or ![alt](src) — image with optional {style attrs}
-// Also matches: [![alt](src)](href) — linked image (badge pattern)
 import { MarkdownBlock, MarkdownRun } from "../types";
 
-const INLINE_RE = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)|(!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\))|(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))/g;
+// Matches:
+// 1. Math block / inline: $...$
+// 2. Footnote reference: [^id]
+// 3. Bold: **...**
+// 4. Italic: *...*
+// 5. Code: `...`
+// 6. Linked image: [![alt](src)](href)
+// 7. Image: ![alt](src)
+// 8. Link: [text](href)
+const INLINE_RE = /(\$([^\$\n]+)\$)|(\[\^([a-zA-Z0-9_-]+)\])|(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)|(!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\))|(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))/g;
 
 export function parseInline(text: string, flags: any = {}): MarkdownRun[] {
-  const runs = [];
+  const runs: MarkdownRun[] = [];
   const re = new RegExp(INLINE_RE.source, "g");
   let last = 0;
   let m;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) runs.push({ t: "text", text: text.slice(last, m.index), ...flags });
-    if (m[1])       runs.push(...parseInline(m[2], { ...flags, bold: true }));
-    else if (m[3])  runs.push(...parseInline(m[4], { ...flags, italic: true }));
-    else if (m[5])  runs.push({ t: "code", text: m[6], ...flags });
-    // [![alt](imgSrc)](href)  — badge / linked image
-    else if (m[7])  runs.push({ t: "linked-image", text: m[8], src: m[9], href: m[10], ...flags });
-    // ![alt](src)
-    else if (m[11]) runs.push({ t: "image", text: m[12], src: m[13], ...flags });
-    // [text](href)
-    else if (m[14]) runs.push({ t: "link", text: m[15], href: m[16], ...flags });
+    if (m[1]) {
+      // $math$
+      runs.push({ t: "math", math: m[2], text: m[2], ...flags });
+    } else if (m[3]) {
+      // [^id] footnote ref
+      runs.push({ t: "footnote-ref", footnoteId: m[4], text: `[${m[4]}]`, ...flags });
+    } else if (m[5]) {
+      runs.push(...parseInline(m[6], { ...flags, bold: true }));
+    } else if (m[7]) {
+      runs.push(...parseInline(m[8], { ...flags, italic: true }));
+    } else if (m[9]) {
+      runs.push({ t: "code", text: m[10], ...flags });
+    } else if (m[11]) {
+      // [![alt](imgSrc)](href)  — badge / linked image
+      runs.push({ t: "linked-image", text: m[12], src: m[13], href: m[14], ...flags });
+    } else if (m[15]) {
+      // ![alt](src)
+      runs.push({ t: "image", text: m[16], src: m[17], ...flags });
+    } else if (m[18]) {
+      // [text](href)
+      runs.push({ t: "link", text: m[19], href: m[20], ...flags });
+    }
     last = re.lastIndex;
   }
   if (last < text.length) runs.push({ t: "text", text: text.slice(last), ...flags });
@@ -53,6 +65,8 @@ function slugify(text: string, used: Set<string>) {
 }
 
 const LIST_RE = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+const TASK_RE = /^\[([ xX])\]\s+(.*)$/;
+const FOOTNOTE_DEF_RE = /^\[\^([a-zA-Z0-9_-]+)\]:\s+(.*)$/;
 
 // HTML block-level tags that should be passed through verbatim
 const BLOCK_HTML_RE = /^<(div|img|table|thead|tbody|tr|td|th|section|article|header|footer|figure|figcaption|details|summary|br|hr|p|ul|ol|li|blockquote|pre|h[1-6]|sub|sup)[\s>\/]/i;
@@ -61,6 +75,7 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
   const blocks: MarkdownBlock[] = [];
   const slugs = new Set<string>();
+  const footnoteDefs: Array<{ id: string; text: string; runs: MarkdownRun[] }> = [];
   let i = 0;
   let firstH1 = true;
   let lastWasEmpty = false;
@@ -70,7 +85,7 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
 
     if (line.trim() === "") {
       if (lastWasEmpty) {
-        blocks.push({ type: "paragraph", inline: [{ t: "text", text: "" }] } as any);
+        blocks.push({ type: "paragraph", inline: [{ t: "text", text: "" }] });
       }
       lastWasEmpty = true;
       i++;
@@ -78,20 +93,59 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
     }
     lastWasEmpty = false;
 
+    // Footnote definition: [^id]: Text
+    const fnMatch = line.match(FOOTNOTE_DEF_RE);
+    if (fnMatch) {
+      const fnId = fnMatch[1];
+      const fnLines = [fnMatch[2]];
+      i++;
+      while (i < lines.length && (lines[i].startsWith("    ") || lines[i].startsWith("\t"))) {
+        fnLines.push(lines[i].trim());
+        i++;
+      }
+      footnoteDefs.push({
+        id: fnId,
+        text: fnLines.join(" "),
+        runs: parseInline(fnLines.join(" ")),
+      });
+      continue;
+    }
+
     // Table of Contents marker: [TOC] or [[toc]]
     if (/^\[\[?[Tt][Oo][Cc]\]?\]$/.test(line.trim())) {
-      blocks.push({ type: "toc" } as any);
+      blocks.push({ type: "toc" });
       i++;
       continue;
     }
 
+    // Math block: $$ ... $$
+    if (line.trim().startsWith("$$")) {
+      const mathLines: string[] = [];
+      const inlineMath = line.trim().slice(2);
+      if (inlineMath.endsWith("$$") && inlineMath.length > 2) {
+        blocks.push({ type: "math", math: inlineMath.slice(0, -2).trim() });
+        i++;
+        continue;
+      }
+      if (inlineMath.length > 0) mathLines.push(inlineMath);
+      i++;
+      while (i < lines.length && !lines[i].trim().endsWith("$$")) {
+        mathLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length && lines[i].trim().endsWith("$$")) {
+        const lastPart = lines[i].trim().slice(0, -2);
+        if (lastPart.length > 0) mathLines.push(lastPart);
+        i++;
+      }
+      blocks.push({ type: "math", math: mathLines.join("\n").trim() });
+      continue;
+    }
+
     // ── raw HTML block ──────────────────────────────────────────────────────
-    // Collect consecutive lines that are part of an HTML block.
-    // We detect: opening <tag or </tag at the start of the trimmed line.
     const trimmed = line.trim();
     if (trimmed.startsWith("<") && (BLOCK_HTML_RE.test(trimmed) || trimmed.startsWith("</"))) {
       const htmlLines = [];
-      // Collect until we hit a blank line OR a non-HTML line (like a heading)
       while (
         i < lines.length &&
         lines[i].trim() !== "" &&
@@ -101,7 +155,7 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
         htmlLines.push(lines[i]);
         i++;
       }
-      blocks.push({ type: "html", raw: htmlLines.join("\n") } as any);
+      blocks.push({ type: "html", raw: htmlLines.join("\n") });
       continue;
     }
 
@@ -113,9 +167,9 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
       while (i < lines.length && !lines[i].trim().startsWith("```")) { buf.push(lines[i]); i++; }
       i++;
       if (lang === "mermaid") {
-        blocks.push({ type: "mermaid", text: buf.join("\n") } as any);
+        blocks.push({ type: "mermaid", text: buf.join("\n") });
       } else {
-        blocks.push({ type: "code", text: buf.join("\n") } as any);
+        blocks.push({ type: "code", text: buf.join("\n"), lang });
       }
       continue;
     }
@@ -130,26 +184,46 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
         type: "heading", level, isTitle,
         id: slugify(h[2], slugs),
         inline: parseInline(h[2]),
-      } as any);
+      });
       i++;
       continue;
     }
 
     // horizontal rule
     if (line === "---") {
-      blocks.push({ type: "hr" } as any);
+      blocks.push({ type: "hr" });
       i++;
       continue;
     }
 
-    // blockquote
+    // blockquote OR GFM Alert / Callout
     if (line.trim().startsWith(">")) {
-      const quoteLines = [];
+      const quoteLinesRaw: string[] = [];
       while (i < lines.length && lines[i].trim().startsWith(">")) {
-        quoteLines.push(parseInline(lines[i].replace(/^\s*>\s?/, "")));
+        quoteLinesRaw.push(lines[i].replace(/^\s*>\s?/, ""));
         i++;
       }
-      blocks.push({ type: "blockquote", lines: quoteLines } as any);
+
+      // Check for GFM Alert syntax: > [!NOTE], > [!TIP], > [!IMPORTANT], > [!WARNING], > [!CAUTION]
+      const firstLine = quoteLinesRaw[0]?.trim() || "";
+      const alertMatch = firstLine.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](?:\s+(.*))?$/i);
+
+      if (alertMatch) {
+        const alertType = alertMatch[1].toLowerCase() as "note" | "tip" | "important" | "warning" | "caution";
+        const customTitle = alertMatch[2]?.trim() || "";
+        const remainingLines = quoteLinesRaw.slice(1);
+        const parsedLines = remainingLines.map((l) => parseInline(l));
+        blocks.push({
+          type: "callout",
+          alertType,
+          alertTitle: customTitle || (alertType.charAt(0).toUpperCase() + alertType.slice(1)),
+          lines: parsedLines.length ? parsedLines : [[]],
+        });
+        continue;
+      }
+
+      const quoteLines = quoteLinesRaw.map((l) => parseInline(l));
+      blocks.push({ type: "blockquote", lines: quoteLines });
       continue;
     }
 
@@ -174,11 +248,11 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
         rows.push(parseRow(lines[i]));
         i++;
       }
-      blocks.push({ type: "table", headers, rows, alignments } as any);
+      blocks.push({ type: "table", headers, rows, alignments });
       continue;
     }
 
-    // lists
+    // lists & task lists
     const lm = line.match(LIST_RE);
     if (lm) {
       const ordered = /\d/.test(lm[2]);
@@ -188,20 +262,29 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
         const m2 = lines[i].match(LIST_RE);
         if (!m2) break;
         const indent = m2[1].length;
-        const content = m2[3];
+        let content = m2[3];
         const isOrdered = /\d/.test(m2[2]);
+
+        // Check if task checkbox
+        let checked: boolean | undefined = undefined;
+        const tm = content.match(TASK_RE);
+        if (tm) {
+          checked = tm[1].toLowerCase() === "x";
+          content = tm[2];
+        }
+
         if (indent >= 2 && items.length > 0) {
           const parent = items[items.length - 1];
           if (!parent.children) {
             parent.children = { ordered: isOrdered, start: isOrdered ? parseInt(m2[2], 10) || 1 : 1, items: [] };
           }
-          parent.children.items.push(parseInline(content));
+          parent.children.items.push({ inline: parseInline(content), checked });
         } else {
-          items.push({ inline: parseInline(content), children: null });
+          items.push({ inline: parseInline(content), checked, children: null });
         }
         i++;
       }
-      blocks.push({ type: "list", ordered, start, items } as any);
+      blocks.push({ type: "list", ordered, start, items });
       continue;
     }
 
@@ -211,19 +294,27 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
     while (
       i < lines.length &&
       lines[i].trim() !== "" &&
-      !/^(#{1,6}\s|>|```)/.test(lines[i]) &&
+      !/^(#{1,6}\s|>|```|\$\$)/.test(lines[i]) &&
       !LIST_RE.test(lines[i]) &&
       !lines[i].includes("|") &&
-      !lines[i].trim().startsWith("<")
+      !lines[i].trim().startsWith("<") &&
+      !FOOTNOTE_DEF_RE.test(lines[i])
     ) { buf.push(lines[i]); i++; }
-    blocks.push({ type: "paragraph", inline: parseInline(buf.join("\n")) } as any);
+    blocks.push({ type: "paragraph", inline: parseInline(buf.join("\n")) });
+  }
+
+  // Append footnotes section at the end if any were defined
+  if (footnoteDefs.length > 0) {
+    blocks.push({
+      type: "footnotes",
+      notes: footnoteDefs,
+    });
   }
 
   return blocks;
 }
 
-/* Constant code font size — no auto-shrink. Always uses the provided default
-   so all code blocks render at a consistent size regardless of line length. */
 export function codeFontSize(_text: string, defaultPt: number = 9): number {
   return defaultPt;
 }
+
