@@ -185,8 +185,8 @@ export default function PagedPreview({ html }) {
       if (b.classList.contains("page-break")) { closePage(); pageTop = top + height; return; }
 
       const isHeading = /^H[1-6]$/i.test(b.tagName);
-      // Orphan protection: If a heading is near bottom with less than 65px room left for following content, break page
-      if (isHeading && (contentHeight - (top - pageTop) < 90) && current.length > 0) {
+      // Orphan protection: If a heading is near bottom with less than 220px room left for following content, break page
+      if (isHeading && (contentHeight - (top - pageTop) < 220) && current.length > 0) {
         closePage();
         pageTop = top;
       }

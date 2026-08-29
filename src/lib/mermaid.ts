@@ -10,18 +10,18 @@ export function initMermaid() {
     startOnLoad: false,
     theme: "neutral",
     themeVariables: {
-      fontFamily: "system-ui, -apple-system, sans-serif",
-      fontSize: "13px",
+      fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      fontSize: "15px",
       primaryColor: "#f0f7ff",
       primaryTextColor: "#0f172a",
-      primaryBorderColor: "#38bdf8",
-      lineColor: "#64748b",
+      primaryBorderColor: "#0284c7",
+      lineColor: "#475569",
       secondaryColor: "#f0fdf4",
       tertiaryColor: "#faf5ff",
       clusterBkg: "#f8fafc",
       clusterBorder: "#cbd5e1",
       mainBkg: "#ffffff",
-      nodeBorder: "#38bdf8",
+      nodeBorder: "#0284c7",
     },
     flowchart: {
       curve: "basis",
@@ -50,9 +50,10 @@ export async function renderMermaidDiagrams(container) {
       el.innerHTML = svg;
       const svgEl = el.querySelector("svg");
       if (svgEl) {
-        svgEl.style.maxWidth = "100%";
+        svgEl.style.width = "100%";
+        svgEl.style.maxWidth = "560px";
         svgEl.style.height = "auto";
-        svgEl.style.maxHeight = "460px";
+        svgEl.style.maxHeight = "360px";
         svgEl.style.display = "block";
         svgEl.style.margin = "0 auto";
       }
