@@ -70,19 +70,26 @@ function headingStyle(block, st) {
   );
 }
 
-function listHtml(list, st) {
+function listHtml(list, st, depth = 0) {
   const tag = list.ordered ? "ol" : "ul";
-  const start = list.ordered && list.start > 1 ? ` start="${list.start}"` : "";
+  const start = list.ordered && list.start > 1 ? Number(list.start) : 1;
+  const bulletSymbols = ["•", "◦", "▪"];
+  const bullet = bulletSymbols[depth % bulletSymbols.length];
+
   const items = list.items
-    .map((it) => {
+    .map((it, idx) => {
       const inline = it.inline || it;
+      const marker = list.ordered ? `${start + idx}.` : bullet;
       const child = it.children
-        ? listHtml({ ordered: it.children.ordered, start: it.children.start, items: it.children.items }, st)
+        ? listHtml({ ordered: it.children.ordered, start: it.children.start, items: it.children.items }, st, depth + 1)
         : "";
-      return `<li style="margin:3pt 0;">${inlineHtml(inline, st)}${child}</li>`;
+      return `<li style="display:flex;align-items:flex-start;margin:3pt 0;">` +
+        `<span style="display:inline-block;width:18pt;flex-shrink:0;user-select:none;line-height:inherit;">${marker}</span>` +
+        `<div style="flex:1;min-width:0;">${inlineHtml(inline, st)}${child}</div>` +
+        `</li>`;
     })
     .join("");
-  return `<${tag}${start} style="margin:8pt 0;padding-left:22pt;">${items}</${tag}>`;
+  return `<${tag} style="margin:2pt 0;padding-left:0;list-style:none;">${items}</${tag}>`;
 }
 
 /* Merge override CSS string into a base style string.
@@ -283,19 +290,25 @@ export function blockToHtml(block, st, opts = {}, overrides = {}) {
       return `<div${eidAttr} style="margin:8pt 0;">${block.raw}</div>`;
     case "list": {
       const tag = block.ordered ? "ol" : "ul";
-      const start = block.ordered && block.start > 1 ? ` start="${block.start}"` : "";
-      const base = `margin:8pt 0;padding-left:22pt;`;
+      const start = block.ordered && block.start > 1 ? Number(block.start) : 1;
+      const base = `margin:8pt 0;padding-left:0;list-style:none;`;
       const style = mergeStyle(base, ov);
+      const bulletSymbols = ["•", "◦", "▪"];
+      const bullet = bulletSymbols[0];
       const items = block.items
-        .map((it) => {
+        .map((it, idx) => {
           const inline = it.inline || it;
+          const marker = block.ordered ? `${start + idx}.` : bullet;
           const child = it.children
-            ? listHtml({ ordered: it.children.ordered, start: it.children.start, items: it.children.items }, st)
+            ? listHtml({ ordered: it.children.ordered, start: it.children.start, items: it.children.items }, st, 1)
             : "";
-          return `<li style="margin:3pt 0;">${inlineHtml(inline, st)}${child}</li>`;
+          return `<li style="display:flex;align-items:flex-start;margin:3pt 0;">` +
+            `<span style="display:inline-block;width:18pt;flex-shrink:0;user-select:none;line-height:inherit;">${marker}</span>` +
+            `<div style="flex:1;min-width:0;">${inlineHtml(inline, st)}${child}</div>` +
+            `</li>`;
         })
         .join("");
-      return `<${tag}${start}${eidAttr} style="${style}">${items}</${tag}>`;
+      return `<${tag}${eidAttr} style="${style}">${items}</${tag}>`;
     }
     default: {
       const base = `margin:0 0 8pt 0;`;

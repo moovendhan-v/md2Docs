@@ -1,9 +1,47 @@
 import { create } from "zustand";
 import { TEMPLATES, DEFAULT_MD } from "@/lib/templates";
 
-const clone = (o) => JSON.parse(JSON.stringify(o));
+const clone = (o: any) => JSON.parse(JSON.stringify(o));
 
-export const useDocStore = create((set, get) => ({
+export interface TocOptions {
+  enabled: boolean;
+  title: string;
+  style: "dotted" | "lines" | "plain";
+  maxDepth: number;
+  insertAtTop: boolean;
+}
+
+export interface DocStore {
+  markdown: string;
+  fileName: string;
+  templateKey: string;
+  styles: any;
+  elementOverrides: Record<string, string>;
+  pages: string[];
+  dark: boolean;
+  hrPageBreak: boolean;
+  canvasLayout: "vertical" | "horizontal";
+  tocOptions: TocOptions;
+  customTemplates: Record<string, any>;
+
+  loadCustomTemplates: () => void;
+  saveCustomTemplate: (template: any) => void;
+  deleteCustomTemplate: (id: string) => void;
+  setMarkdown: (markdown: string) => void;
+  setFileName: (fileName: string) => void;
+  setPages: (pages: string[]) => void;
+  setHrPageBreak: (hrPageBreak: boolean) => void;
+  setCanvasLayout: (canvasLayout: "vertical" | "horizontal") => void;
+  setTemplate: (templateKey: string) => void;
+  updateStyle: (group: string, key: string, value: any) => void;
+  resetStyles: () => void;
+  setDark: (dark: boolean) => void;
+  setElementOverride: (eid: string, inlineStyle: string) => void;
+  clearElementOverride: (eid: string) => void;
+  updateTocOption: (key: keyof TocOptions | string, value: any) => void;
+}
+
+export const useDocStore = create<DocStore>((set, get) => ({
   markdown: DEFAULT_MD,
   fileName: "document",
   templateKey: "boardroom",
@@ -11,7 +49,7 @@ export const useDocStore = create((set, get) => ({
   elementOverrides: {},  // { [eid]: { inlineStyle: "color:#f00;font-size:18pt;" } }
   pages: [],             // paginated HTML, kept in sync by PagedPreview
   dark: false,
-  hrPageBreak: true,
+  hrPageBreak: false,
   canvasLayout: "vertical",  // "vertical" | "horizontal"
 
   // Table of Contents options
@@ -27,7 +65,7 @@ export const useDocStore = create((set, get) => ({
 
   loadCustomTemplates: () => {
     try {
-      const stored = localStorage.getItem("md2docs_custom_templates_v1");
+      const stored = typeof window !== "undefined" ? localStorage.getItem("md2docs_custom_templates_v1") : null;
       if (stored) {
         set({ customTemplates: JSON.parse(stored) });
       }
@@ -39,7 +77,9 @@ export const useDocStore = create((set, get) => ({
   saveCustomTemplate: (template) => {
     set((state) => {
       const updated = { ...state.customTemplates, [template.id]: template };
-      localStorage.setItem("md2docs_custom_templates_v1", JSON.stringify(updated));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("md2docs_custom_templates_v1", JSON.stringify(updated));
+      }
       return { customTemplates: updated };
     });
   },
@@ -48,7 +88,9 @@ export const useDocStore = create((set, get) => ({
     set((state) => {
       const updated = { ...state.customTemplates };
       delete updated[id];
-      localStorage.setItem("md2docs_custom_templates_v1", JSON.stringify(updated));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("md2docs_custom_templates_v1", JSON.stringify(updated));
+      }
       return { customTemplates: updated };
     });
   },
@@ -70,10 +112,14 @@ export const useDocStore = create((set, get) => ({
   resetStyles: () => {
     const state = get();
     const source = state.customTemplates[state.templateKey] || TEMPLATES[state.templateKey];
-    set({ styles: clone(source.styles), elementOverrides: {} });
+    if (source) {
+      set({ styles: clone(source.styles), elementOverrides: {} });
+    }
   },
   setDark: (dark) => {
-    document.documentElement.classList.toggle("dark", dark);
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", dark);
+    }
     set({ dark });
   },
 
@@ -99,4 +145,5 @@ export const useDocStore = create((set, get) => ({
 if (typeof window !== "undefined") {
   useDocStore.getState().loadCustomTemplates();
 }
+
 
