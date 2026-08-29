@@ -2,6 +2,7 @@
 /* Tokens + styles → inline-styled HTML (used by preview + PDF renderer).
    Each block gets a data-eid="<index>" attribute so the ElementInspector can
    write per-element inline-style overrides that only affect that one block. */
+import katex from "katex";
 import { codeFontSize } from "./parser";
 
 export const esc = (s) =>
@@ -17,7 +18,7 @@ function wrapFlags(html, r) {
 }
 
 function inlineHtml(runs, st) {
-  if (runs.length === 1 && runs[0].text === "") return "&nbsp;";
+  if (!runs || (runs.length === 1 && runs[0].text === "")) return "&nbsp;";
   return runs
     .map((r) => {
       const text = esc(r.text || "").replace(/\n/g, "<br/>");
@@ -25,6 +26,15 @@ function inlineHtml(runs, st) {
         case "code":
           return wrapFlags(
             `<code style="background:${st.code.bg};color:${st.code.color};padding:1px 5px;border-radius:3px;font-family:Consolas,'Courier New',monospace;font-size:0.9em;">${text}</code>`, r);
+        case "math": {
+          try {
+            return katex.renderToString(r.math || r.text || "", { throwOnError: false, displayMode: false });
+          } catch {
+            return wrapFlags(`<code>${esc(r.math || r.text || "")}</code>`, r);
+          }
+        }
+        case "footnote-ref":
+          return `<sup><a href="#fn-${esc(r.footnoteId)}" id="fnref-${esc(r.footnoteId)}" style="color:${st.link.color};text-decoration:none;font-weight:bold;font-size:0.78em;padding:0 1px;">[${esc(r.footnoteId)}]</a></sup>`;
         case "link": {
           const underline = st.link.underline !== false ? "text-decoration:underline;" : "text-decoration:none;";
           return wrapFlags(`<a href="${esc(r.href)}" style="color:${st.link.color};${underline}">${text}</a>`, r);
@@ -70,6 +80,39 @@ function headingStyle(block, st) {
   );
 }
 
+const ALERT_STYLES = {
+  note: {
+    color: "#0284c7",
+    bg: "rgba(2,132,199,0.06)",
+    borderColor: "#0284c7",
+    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5pt;display:inline-block;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`,
+  },
+  tip: {
+    color: "#059669",
+    bg: "rgba(5,150,105,0.06)",
+    borderColor: "#059669",
+    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5pt;display:inline-block;"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg>`,
+  },
+  important: {
+    color: "#7c3aed",
+    bg: "rgba(124,58,237,0.06)",
+    borderColor: "#7c3aed",
+    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5pt;display:inline-block;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+  },
+  warning: {
+    color: "#d97706",
+    bg: "rgba(217,119,6,0.06)",
+    borderColor: "#d97706",
+    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5pt;display:inline-block;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+  },
+  caution: {
+    color: "#dc2626",
+    bg: "rgba(220,38,38,0.06)",
+    borderColor: "#dc2626",
+    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5pt;display:inline-block;"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+  },
+};
+
 function listHtml(list, st, depth = 0) {
   const tag = list.ordered ? "ol" : "ul";
   const start = list.ordered && list.start > 1 ? Number(list.start) : 1;
@@ -79,12 +122,17 @@ function listHtml(list, st, depth = 0) {
   const items = list.items
     .map((it, idx) => {
       const inline = it.inline || it;
-      const marker = list.ordered ? `${start + idx}.` : bullet;
+      let marker = list.ordered ? `${start + idx}.` : bullet;
+      if (it.checked !== undefined) {
+        marker = it.checked
+          ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:11pt;height:11pt;border:1.5px solid ${st.heading.color || st.title.color};border-radius:3px;background:${st.heading.color || st.title.color};color:#fff;font-size:8pt;line-height:1;font-weight:bold;">✓</span>`
+          : `<span style="display:inline-flex;align-items:center;justify-content:center;width:11pt;height:11pt;border:1.5px solid ${st.table.borderColor || '#888'};border-radius:3px;background:transparent;"></span>`;
+      }
       const child = it.children
         ? listHtml({ ordered: it.children.ordered, start: it.children.start, items: it.children.items }, st, depth + 1)
         : "";
       return `<li style="display:flex;align-items:flex-start;margin:3pt 0;">` +
-        `<span style="display:inline-block;width:18pt;flex-shrink:0;user-select:none;line-height:inherit;">${marker}</span>` +
+        `<span style="display:inline-flex;align-items:center;width:18pt;flex-shrink:0;user-select:none;line-height:inherit;">${marker}</span>` +
         `<div style="flex:1;min-width:0;">${inlineHtml(inline, st)}${child}</div>` +
         `</li>`;
     })
@@ -246,7 +294,7 @@ export function blockToHtml(block, st, opts = {}, overrides = {}) {
         ? `<hr class="page-break"${eidAttr} style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`
         : `<hr${eidAttr} style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`;
     case "mermaid":
-      return `<div class="mermaid-diagram"${eidAttr} data-mermaid="${esc(block.text)}" style="text-align:center;margin:12pt 0;"></div>`;
+      return `<div class="mermaid-diagram"${eidAttr} data-mermaid="${esc(block.text)}" style="text-align:center;margin:14pt 0;min-height:180px;display:flex;justify-content:center;align-items:center;page-break-inside:avoid;break-inside:avoid;"></div>`;
     case "code": {
       const size = codeFontSize(block.text, st.page.fontSize - 1);
       const radius = st.code.borderRadius !== undefined ? `${st.code.borderRadius}px` : "4px";
@@ -309,6 +357,45 @@ export function blockToHtml(block, st, opts = {}, overrides = {}) {
         })
         .join("");
       return `<${tag}${eidAttr} style="${style}">${items}</${tag}>`;
+    }
+    case "callout": {
+      const cfg = ALERT_STYLES[block.alertType] || ALERT_STYLES.note;
+      const title = block.alertTitle || "Note";
+      const content = block.lines.map((l) => inlineHtml(l, st)).join("<br/>");
+      const base = `margin:10pt 0;padding:8pt 12pt;background:${cfg.bg};border-left:3.5px solid ${cfg.borderColor};border-radius:0 6px 6px 0;page-break-inside:avoid;`;
+      const style = mergeStyle(base, ov);
+      return `<div${eidAttr} class="gfm-callout gfm-callout-${block.alertType}" style="${style}">` +
+        `<div style="display:flex;align-items:center;font-weight:bold;color:${cfg.color};font-size:${Math.max(st.page.fontSize - 0.5, 9)}pt;margin-bottom:4pt;letter-spacing:0.02em;">` +
+        `${cfg.icon}<span>${esc(title)}</span>` +
+        `</div>` +
+        `<div style="color:${st.page.textColor};font-size:${st.page.fontSize}pt;line-height:${st.page.lineHeight};">${content}</div>` +
+        `</div>`;
+    }
+    case "math": {
+      let mathHtml = "";
+      try {
+        mathHtml = katex.renderToString(block.math || "", { throwOnError: false, displayMode: true });
+      } catch {
+        mathHtml = `<pre style="font-family:monospace;">${esc(block.math || "")}</pre>`;
+      }
+      const base = `margin:10pt 0;padding:10pt 14pt;text-align:center;overflow-x:auto;background:rgba(128,128,128,0.03);border:1px solid ${st.table.borderColor};border-radius:6px;page-break-inside:avoid;`;
+      const style = mergeStyle(base, ov);
+      return `<div${eidAttr} class="math-block" style="${style}">${mathHtml}</div>`;
+    }
+    case "footnotes": {
+      const notesHtml = (block.notes || [])
+        .map((n) => {
+          return `<li id="fn-${esc(n.id)}" style="margin:4pt 0;font-size:${Math.max(st.page.fontSize - 1.5, 8)}pt;color:${st.page.textColor};opacity:0.85;">` +
+            `${inlineHtml(n.runs, st)} <a href="#fnref-${esc(n.id)}" style="color:${st.link.color};text-decoration:none;margin-left:4pt;font-weight:bold;" title="Jump back">↩</a>` +
+            `</li>`;
+        })
+        .join("");
+      const base = `margin-top:20pt;padding-top:10pt;border-top:1px solid ${st.table.borderColor};page-break-inside:avoid;`;
+      const style = mergeStyle(base, ov);
+      return `<div${eidAttr} class="footnotes-section" style="${style}">` +
+        `<div style="font-size:9pt;font-weight:bold;color:${st.page.textColor};opacity:0.7;margin-bottom:6pt;text-transform:uppercase;letter-spacing:0.04em;">Footnotes</div>` +
+        `<ol style="padding-left:16pt;margin:0;">${notesHtml}</ol>` +
+        `</div>`;
     }
     default: {
       const base = `margin:0 0 8pt 0;`;

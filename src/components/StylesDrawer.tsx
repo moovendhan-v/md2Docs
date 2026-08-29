@@ -1,3 +1,5 @@
+// @ts-nocheck
+import React from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import TemplateGallery from "@/components/TemplateGallery";

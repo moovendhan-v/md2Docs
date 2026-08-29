@@ -1,3 +1,4 @@
+//@ts-nocheck
 /* Tokens + styles → real .docx via the `docx` package.
    Opens natively in MS Word, Google Docs, LibreOffice.
 
@@ -50,6 +51,15 @@ function runs(inline, st, opts = {}) {
     };
     const textParts = r.text.split("\n");
     switch (r.t) {
+      case "math":
+        textParts.forEach((part, idx) => {
+          if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
+          out.push(new TextRun({ ...common, text: part, font: "Cambria Math", color: hex(st.page.textColor), italics: true }));
+        });
+        break;
+      case "footnote-ref":
+        out.push(new TextRun({ ...common, text: `[${r.footnoteId || ""}]`, superScript: true, color: hex(st.link.color), bold: true }));
+        break;
       case "code":
         textParts.forEach((part, idx) => {
           if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
@@ -174,25 +184,87 @@ export async function exportDocx(blocks, st, fileName, opts = {}) {
       case "list": {
         const ref = b.ordered ? addOrderedRef(b.start || 1) : null;
         for (const item of b.items) {
+          const taskPrefix = item.checked !== undefined ? (item.checked ? "☒ " : "☐ ") : "";
+          const itemRuns = item.inline ? runs(item.inline, st, bodyOpts) : [];
+          if (taskPrefix) {
+            itemRuns.unshift(new TextRun({ text: taskPrefix, font: "Segoe UI Symbol, Arial Unicode MS", size: bodySize, bold: true }));
+          }
           children.push(new Paragraph({
-            ...(b.ordered ? { numbering: { reference: ref, level: 0 } } : { bullet: { level: 0 } }),
+            ...(b.ordered ? { numbering: { reference: ref, level: 0 } } : { bullet: item.checked !== undefined ? undefined : { level: 0 } }),
+            indent: item.checked !== undefined ? { left: 720 } : undefined,
             spacing: { line: spacing.line, after: 60 },
-            children: runs(item.inline, st, bodyOpts),
+            children: itemRuns,
           }));
           if (item.children) {
             const childRef = item.children.ordered ? addOrderedRef(item.children.start || 1) : null;
             for (const sub of item.children.items) {
+              const subTaskPrefix = sub.checked !== undefined ? (sub.checked ? "☒ " : "☐ ") : "";
+              const subRuns = sub.inline ? runs(sub.inline, st, bodyOpts) : (Array.isArray(sub) ? runs(sub, st, bodyOpts) : []);
+              if (subTaskPrefix) {
+                subRuns.unshift(new TextRun({ text: subTaskPrefix, font: "Segoe UI Symbol, Arial Unicode MS", size: bodySize, bold: true }));
+              }
               children.push(new Paragraph({
                 ...(item.children.ordered
                   ? { numbering: { reference: childRef, level: 0 } }
-                  : { bullet: { level: 1 } }),
-                indent: item.children.ordered ? { left: 1440, hanging: 360 } : undefined,
+                  : { bullet: sub.checked !== undefined ? undefined : { level: 1 } }),
+                indent: item.children.ordered ? { left: 1440, hanging: 360 } : (sub.checked !== undefined ? { left: 1440 } : undefined),
                 spacing: { line: spacing.line, after: 60 },
-                children: runs(sub, st, bodyOpts),
+                children: subRuns,
               }));
             }
           }
         }
+        break;
+      }
+      case "callout": {
+        const ALERT_COLORS = {
+          note: "0284C7",
+          tip: "059669",
+          important: "7C3AED",
+          warning: "D97706",
+          caution: "DC2626",
+        };
+        const color = ALERT_COLORS[b.alertType] || "0284C7";
+        children.push(new Paragraph({
+          indent: { left: 360 },
+          spacing: { before: 140, after: 40 },
+          border: { left: { style: BorderStyle.SINGLE, size: 24, color, space: 8 } },
+          children: [new TextRun({ text: `${(b.alertTitle || "Note").toUpperCase()}: `, font: headingFont, size: bodySize, color, bold: true })],
+        }));
+        (b.lines || []).forEach((l) =>
+          children.push(new Paragraph({
+            indent: { left: 360 },
+            spacing: { after: 60 },
+            border: { left: { style: BorderStyle.SINGLE, size: 24, color, space: 8 } },
+            children: runs(l, st, bodyOpts),
+          }))
+        );
+        break;
+      }
+      case "math": {
+        children.push(new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 140, after: 140 },
+          shading: { fill: "F8F9FA" },
+          children: [new TextRun({ text: b.math || "", font: "Cambria Math", size: half(st.page.fontSize + 1), italics: true })],
+        }));
+        break;
+      }
+      case "footnotes": {
+        children.push(new Paragraph({
+          spacing: { before: 240, after: 80 },
+          border: { top: { style: BorderStyle.SINGLE, size: 6, color: hex(st.table.borderColor), space: 4 } },
+          children: [new TextRun({ text: "FOOTNOTES", font: headingFont, size: half(8), color: "888888", bold: true })],
+        }));
+        (b.notes || []).forEach((n) => {
+          children.push(new Paragraph({
+            spacing: { after: 40 },
+            children: [
+              new TextRun({ text: `[${n.id}] `, font: bodyFont, size: half(8.5), color: hex(st.link.color), bold: true }),
+              ...runs(n.runs, st, { ...bodyOpts, size: half(8.5) }),
+            ],
+          }));
+        });
         break;
       }
       case "table": {

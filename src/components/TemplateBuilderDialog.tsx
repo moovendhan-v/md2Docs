@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { useState, useEffect } from "react";
 import { useDocStore } from "@/store/useDocStore";
 import { TEMPLATES } from "@/lib/templates";

@@ -1,13 +1,16 @@
 export interface MarkdownRun {
-  t?: "text" | "code" | "link";
+  t?: "text" | "code" | "link" | "image" | "linked-image" | "math" | "footnote-ref";
   text?: string;
   href?: string;
+  src?: string;
   bold?: boolean;
   italic?: boolean;
+  math?: string;
+  footnoteId?: string;
 }
 
 export interface MarkdownBlock {
-  type: string; // e.g. "paragraph", "heading", "list", "code", "table", "html", "hr"
+  type: string; // "paragraph" | "heading" | "list" | "code" | "table" | "html" | "hr" | "blockquote" | "callout" | "math" | "toc" | "footnotes"
   level?: number;
   runs?: MarkdownRun[];
   items?: any[];
@@ -26,37 +29,41 @@ export interface MarkdownBlock {
   ordered?: boolean;
   start?: number;
   children?: any;
+  alertType?: "note" | "tip" | "important" | "warning" | "caution";
+  alertTitle?: string;
+  math?: string;
+  notes?: Array<{ id: string; text: string; runs: MarkdownRun[] }>;
+  _eid?: number | string;
 }
 
-export interface StyleNode {
-  font?: string;
-  size?: number;
+export interface WatermarkConfig {
+  enabled: boolean;
+  text: string;
   color?: string;
-  bold?: boolean;
-  italic?: boolean;
-  alignment?: "left" | "center" | "right" | "justify";
-  padding?: {
-    top?: number;
-    bottom?: number;
-    left?: number;
-    right?: number;
-  };
-  border?: {
-    top?: BorderOptions;
-    bottom?: BorderOptions;
-    left?: BorderOptions;
-    right?: BorderOptions;
-  };
-  bg?: string;
-  indent?: number;
-  hanging?: number;
-  lineHeight?: number;
+  opacity?: number;
+  angle?: number;
+  fontSize?: number;
 }
 
-export interface BorderOptions {
-  color?: string;
-  size?: number;
-  space?: number;
+export interface HeaderFooterConfig {
+  enabled: boolean;
+  leftText?: string;
+  rightText?: string;
+  centerText?: string;
+  showRule?: boolean;
+  logoUrl?: string;
+}
+
+export interface CoverPageConfig {
+  enabled: boolean;
+  template: "minimal" | "executive" | "tech" | "academic";
+  title?: string;
+  subtitle?: string;
+  author?: string;
+  organization?: string;
+  date?: string;
+  version?: string;
+  logoUrl?: string;
 }
 
 export interface TemplateStyles {
@@ -67,29 +74,17 @@ export interface TemplateStyles {
   code?: any;
   blockquote?: any;
   link?: any;
-  watermark?: {
-    text?: string;
-    color?: string;
-    opacity?: number;
-  };
-  header?: {
-    logoUrl?: string;
-    text?: string;
-    layout?: "logo-left" | "logo-right" | "center";
-    borderBottom?: boolean;
-    height?: number;
-  };
-  footer?: {
-    text?: string;
-    bannerColor?: string;
-    textColor?: string;
-    layout?: "center" | "split";
-    height?: number;
-  };
+  callout?: any;
+  watermark?: WatermarkConfig;
+  header?: HeaderFooterConfig;
+  footer?: HeaderFooterConfig;
+  coverPage?: CoverPageConfig;
 }
 
 export interface TemplateConfig {
   id: string;
   name: string;
   styles: TemplateStyles;
+  isCustom?: boolean;
 }
+

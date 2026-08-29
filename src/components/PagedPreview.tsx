@@ -71,6 +71,8 @@ export default function PagedPreview({ html }) {
   const setPages = useDocStore((s) => s.setPages);
   const canvasLayout = useDocStore((s) => s.canvasLayout);
   const setCanvasLayout = useDocStore((s) => s.setCanvasLayout);
+  const docMeta = useDocStore((s) => s.documentMeta);
+  const customCss = useDocStore((s) => s.customCss);
   const measureRef = useRef(null);
   const [zoom, setZoom] = useState(0.5);
   const [mermaidTick, setMermaidTick] = useState(0);
@@ -181,6 +183,13 @@ export default function PagedPreview({ html }) {
       }
 
       if (b.classList.contains("page-break")) { closePage(); pageTop = top + height; return; }
+
+      const isHeading = /^H[1-6]$/i.test(b.tagName);
+      // Orphan protection: If a heading is near bottom with less than 220px room left for following content, break page
+      if (isHeading && (contentHeight - (top - pageTop) < 220) && current.length > 0) {
+        closePage();
+        pageTop = top;
+      }
 
       const bottom = top + height;
       if (bottom - pageTop > contentHeight && current.length > 0) { closePage(); pageTop = top; }
@@ -348,104 +357,125 @@ export default function PagedPreview({ html }) {
                       }}
                     />
                   )}
-                  {/* Structured Header */}
-                  {(styles.header?.text || styles.header?.logoUrl) && (
+                  {/* Custom Injected CSS */}
+                  {customCss && <style dangerouslySetInnerHTML={{ __html: customCss }} />}
+
+                  {/* Running Header */}
+                  {styles.header?.enabled && (
                     <div
                       style={{
                         position: "absolute",
                         top: 0,
                         left: 0,
                         right: 0,
-                        padding: `20px ${geom.marginRight}px 20px ${geom.marginLeft}px`,
+                        height: `${geom.marginTop}px`,
+                        paddingLeft: `${geom.marginLeft}px`,
+                        paddingRight: `${geom.marginRight}px`,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: styles.header.layout === "center" ? "center" : "space-between",
-                        flexDirection: styles.header.layout === "logo-right" ? "row-reverse" : "row",
-                        borderBottom: styles.header.borderBottom ? `1px solid ${borderColor}` : "none",
-                        backgroundColor: "transparent",
+                        justifyContent: "space-between",
+                        borderBottom: styles.header.showRule !== false ? `1px solid ${borderColor}` : "none",
+                        fontSize: "8pt",
+                        color: "#888888",
+                        fontFamily: styles.page.fontFamily,
                         zIndex: 11,
-                        height: styles.header.height ? `${styles.header.height}px` : "auto"
                       }}
                     >
-                      {styles.header.logoUrl && (
-                        <img 
-                          src={styles.header.logoUrl} 
-                          alt="Header Logo" 
-                          style={{ maxHeight: "40px", maxWidth: "150px", objectFit: "contain" }} 
-                        />
-                      )}
-                      {styles.header.text && (
-                        <span style={{ 
-                          fontFamily: styles.page.fontFamily, 
-                          fontSize: "10pt", 
-                          fontWeight: "bold", 
-                          color: borderColor 
-                        }}>
-                          {styles.header.text}
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "50%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {styles.header.logoUrl && (
+                          <img 
+                            src={styles.header.logoUrl} 
+                            alt="Logo" 
+                            style={{ height: "16px", objectFit: "contain" }} 
+                          />
+                        )}
+                        <span>
+                          {(styles.header.leftText || "{{title}}")
+                            .replace(/{{page}}/gi, String(i + 1))
+                            .replace(/{{totalPages}}/gi, String(pages.length))
+                            .replace(/{{title}}|{{docTitle}}/gi, docMeta?.title || styles.title?.text || "Document")
+                            .replace(/{{author}}/gi, docMeta?.author || "")
+                            .replace(/{{organization}}|{{org}}/gi, docMeta?.organization || "")}
                         </span>
-                      )}
+                      </div>
+                      <div style={{ maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>
+                        {(styles.header.rightText || "{{organization}}")
+                          .replace(/{{page}}/gi, String(i + 1))
+                          .replace(/{{totalPages}}/gi, String(pages.length))
+                          .replace(/{{organization}}|{{org}}/gi, docMeta?.organization || "")
+                          .replace(/{{date}}/gi, docMeta?.date || "")}
+                      </div>
                     </div>
                   )}
 
-                  {/* Structured Footer */}
-                  {(styles.footer?.text || styles.footer?.bannerColor) && (
+                  {/* Running Footer */}
+                  {styles.footer?.enabled && (
                     <div
                       style={{
                         position: "absolute",
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        height: styles.footer.height ? `${styles.footer.height}px` : "40px",
-                        backgroundColor: styles.footer.bannerColor || "transparent",
+                        height: `${geom.marginBottom}px`,
+                        paddingLeft: `${geom.marginLeft}px`,
+                        paddingRight: `${geom.marginRight}px`,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: styles.footer.layout === "split" ? "space-between" : "center",
-                        padding: `0 ${geom.marginRight}px 0 ${geom.marginLeft}px`,
+                        justifyContent: "space-between",
+                        borderTop: styles.footer.showRule ? `1px solid ${borderColor}` : "none",
+                        fontSize: `${pageNumSize}pt`,
+                        color: pageNumColor,
+                        fontFamily: styles.page.fontFamily,
                         zIndex: 11,
                       }}
                     >
-                      {styles.footer.text && (
-                        <span style={{ 
-                          fontFamily: styles.page.fontFamily, 
-                          fontSize: "9pt", 
-                          color: styles.footer.textColor || "#ffffff" 
-                        }}>
-                          {styles.footer.text}
-                        </span>
-                      )}
+                      <div style={{ fontSize: "7.5pt", color: "#888888", maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {(styles.footer.leftText || "Confidential")
+                          .replace(/{{page}}/gi, String(i + 1))
+                          .replace(/{{totalPages}}/gi, String(pages.length))
+                          .replace(/{{title}}/gi, docMeta?.title || "")}
+                      </div>
+                      <div style={{ marginLeft: "auto", letterSpacing: "0.04em" }}>
+                        {showPageNumbers ? getPageLabel(i) : (styles.footer.rightText || "")}
+                      </div>
                     </div>
                   )}
-                  {/* Watermark */}
-                  {styles.watermark?.text && (
+
+                  {/* Security / Draft Watermark */}
+                  {styles.watermark?.enabled && styles.watermark?.text && (
                     <div
                       style={{
                         position: "absolute",
                         top: "50%",
                         left: "50%",
-                        transform: "translate(-50%, -50%) rotate(-45deg)",
-                        color: styles.watermark.color || "#cccccc",
-                        opacity: styles.watermark.opacity !== undefined ? styles.watermark.opacity : 0.2,
-                        fontSize: "80pt",
-                        fontFamily: "sans-serif",
+                        transform: `translate(-50%, -50%) rotate(${styles.watermark.angle ?? -35}deg)`,
+                        color: styles.watermark.color || "#000000",
+                        opacity: styles.watermark.opacity !== undefined ? styles.watermark.opacity : 0.08,
+                        fontSize: `${styles.watermark.fontSize || 52}pt`,
+                        fontFamily: styles.page.fontFamily,
                         fontWeight: "bold",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
                         whiteSpace: "nowrap",
                         pointerEvents: "none",
-                        zIndex: 0,
+                        userSelect: "none",
+                        zIndex: 1,
                       }}
                     >
                       {styles.watermark.text}
                     </div>
                   )}
+
                   {/* Content — interactive for click-to-inspect */}
                   <div
                     className="preview-interactive"
-                    style={{ ...styleObj(baseStyle(styles)), position: "relative", zIndex: 1 }}
+                    style={{ ...styleObj(baseStyle(styles)), position: "relative", zIndex: 2 }}
                     dangerouslySetInnerHTML={{ __html: pageHtml }}
                     onClick={handleContentClick}
                   />
 
-                  {/* Page number footer */}
-                  {showPageNumbers && (
+                  {/* Default Page number footer (when custom footer disabled) */}
+                  {showPageNumbers && !styles.footer?.enabled && (
                     <div style={{
                       position: "absolute", bottom: 0, left: 0, right: 0,
                       height: `${geom.marginBottom}px`,
