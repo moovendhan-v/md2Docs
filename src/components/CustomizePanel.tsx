@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import {
   RotateCcw, ChevronDown, ChevronRight, FileText, Type, Heading2,
-  Table2, Code2, Quote, Link2, Layout, Hash, List,
+  Table2, Code2, Quote, Link2, Layout, Hash, List, BookOpen,
 } from "lucide-react";
 
 
