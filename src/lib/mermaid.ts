@@ -8,9 +8,28 @@ export function initMermaid() {
   if (initialized) return;
   mermaid.initialize({
     startOnLoad: false,
-    theme: "default",
+    theme: "neutral",
+    themeVariables: {
+      fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      fontSize: "15px",
+      primaryColor: "#f0f7ff",
+      primaryTextColor: "#0f172a",
+      primaryBorderColor: "#0284c7",
+      lineColor: "#475569",
+      secondaryColor: "#f0fdf4",
+      tertiaryColor: "#faf5ff",
+      clusterBkg: "#f8fafc",
+      clusterBorder: "#cbd5e1",
+      mainBkg: "#ffffff",
+      nodeBorder: "#0284c7",
+    },
+    flowchart: {
+      curve: "basis",
+      padding: 16,
+      useMaxWidth: true,
+      htmlLabels: true,
+    },
     securityLevel: "loose",
-    fontFamily: "inherit",
   });
   initialized = true;
 }
@@ -29,6 +48,15 @@ export async function renderMermaidDiagrams(container) {
       const id = `mermaid-${counter++}`;
       const { svg } = await mermaid.render(id, code);
       el.innerHTML = svg;
+      const svgEl = el.querySelector("svg");
+      if (svgEl) {
+        svgEl.style.width = "100%";
+        svgEl.style.maxWidth = "560px";
+        svgEl.style.height = "auto";
+        svgEl.style.maxHeight = "360px";
+        svgEl.style.display = "block";
+        svgEl.style.margin = "0 auto";
+      }
       el.classList.add("rendered");
     } catch (err) {
       el.innerHTML = `<pre style="color:red;font-size:11px;">${err.message || "Mermaid render error"}</pre>`;

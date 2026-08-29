@@ -11,6 +11,16 @@ export interface TocOptions {
   insertAtTop: boolean;
 }
 
+export interface DocumentMeta {
+  title: string;
+  subtitle: string;
+  author: string;
+  organization: string;
+  date: string;
+  version: string;
+  logoUrl: string;
+}
+
 export interface DocStore {
   markdown: string;
   fileName: string;
@@ -23,6 +33,8 @@ export interface DocStore {
   canvasLayout: "vertical" | "horizontal";
   tocOptions: TocOptions;
   customTemplates: Record<string, any>;
+  documentMeta: DocumentMeta;
+  customCss: string;
 
   loadCustomTemplates: () => void;
   saveCustomTemplate: (template: any) => void;
@@ -39,6 +51,8 @@ export interface DocStore {
   setElementOverride: (eid: string, inlineStyle: string) => void;
   clearElementOverride: (eid: string) => void;
   updateTocOption: (key: keyof TocOptions | string, value: any) => void;
+  setDocumentMeta: (meta: Partial<DocumentMeta>) => void;
+  setCustomCss: (css: string) => void;
 }
 
 export const useDocStore = create<DocStore>((set, get) => ({
@@ -51,6 +65,17 @@ export const useDocStore = create<DocStore>((set, get) => ({
   dark: false,
   hrPageBreak: false,
   canvasLayout: "vertical",  // "vertical" | "horizontal"
+  customCss: "",
+
+  documentMeta: {
+    title: "Technical Design & Architecture Proposal",
+    subtitle: "Cloud-Native Infrastructure & API Specification",
+    author: "Engineering Team",
+    organization: "CyberTech Mind",
+    date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+    version: "v1.0.0",
+    logoUrl: "",
+  },
 
   // Table of Contents options
   tocOptions: {
@@ -100,6 +125,11 @@ export const useDocStore = create<DocStore>((set, get) => ({
   setPages: (pages) => set({ pages }),
   setHrPageBreak: (hrPageBreak) => set({ hrPageBreak }),
   setCanvasLayout: (canvasLayout) => set({ canvasLayout }),
+  setCustomCss: (customCss) => set({ customCss }),
+  setDocumentMeta: (meta) =>
+    set((state) => ({
+      documentMeta: { ...state.documentMeta, ...meta },
+    })),
   setTemplate: (templateKey) => {
     const state = get();
     const source = state.customTemplates[templateKey] || TEMPLATES[templateKey];
