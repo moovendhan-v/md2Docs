@@ -18,38 +18,60 @@ const half = (pt) => Math.round(pt * 2); // docx font sizes are half-points
 const CM = 567; // twips per cm
 
 /* Render a mermaid string to a PNG Uint8Array via SVG → canvas. */
-async function mermaidToPng(text) {
+async function mermaidToPng(text: string): Promise<Uint8Array> {
   const svg = await renderMermaidSvg(text);
-  const blob = await new Promise((resolve) => {
+  const blob = await new Promise<Blob>((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth * 2;
       canvas.height = img.naturalHeight * 2;
       const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas context is null"));
+        return;
+      }
       ctx.scale(2, 2);
       ctx.drawImage(img, 0, 0);
-      canvas.toBlob((b) => resolve(b), "image/png");
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Blob creation failed"))), "image/png");
     };
+    img.onerror = reject;
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   });
   const buf = await blob.arrayBuffer();
   return new Uint8Array(buf);
 }
 
-function runs(inline, st, opts = {}) {
-  const out = [];
-  for (const r of inline) {
+interface RunOptions {
+  font?: string;
+  size?: number;
+  color?: string;
+  allCaps?: boolean;
+  bold?: boolean;
+  italics?: boolean;
+}
+
+function runs(inline: any, st: any, opts: RunOptions = {}) {
+  const out: any[] = [];
+  if (!inline) return out;
+  const list = Array.isArray(inline) ? inline : [inline];
+
+  for (const r of list) {
+    if (!r) continue;
+    const isObj = typeof r === "object";
+    const textVal = isObj ? (r.text ?? "") : String(r);
     const common = {
       font: opts.font,
       size: opts.size,
       color: opts.color,
       allCaps: opts.allCaps,
-      bold: opts.bold || r.bold,
-      italics: opts.italics || r.italic,
+      bold: Boolean(opts.bold || (isObj && r.bold)),
+      italics: Boolean(opts.italics || (isObj && r.italic)),
     };
-    const textParts = r.text.split("\n");
-    switch (r.t) {
+    const textParts = String(textVal).split("\n");
+    const tokenType = isObj ? r.t : "text";
+
+    switch (tokenType) {
       case "code":
         textParts.forEach((part, idx) => {
           if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
@@ -57,19 +79,20 @@ function runs(inline, st, opts = {}) {
         });
         break;
       case "link": {
+        const href = isObj && r.href ? r.href : "#";
         textParts.forEach((part, idx) => {
           if (idx > 0) out.push(new TextRun({ ...common, text: "", break: 1 }));
           const child = new TextRun({ ...common, text: part, color: hex(st.link.color), underline: {} });
-          if (r.href.startsWith("#")) {
-            out.push(new InternalHyperlink({ anchor: r.href.slice(1), children: [child] }));
+          if (href.startsWith("#")) {
+            out.push(new InternalHyperlink({ anchor: href.slice(1), children: [child] }));
           } else {
-            out.push(new ExternalHyperlink({ link: r.href, children: [child] }));
+            out.push(new ExternalHyperlink({ link: href, children: [child] }));
           }
         });
         break;
       }
       case "image":
-        out.push(new TextRun({ ...common, text: `[Image: ${r.text || "Photo"}]`, color: "888888", italics: true }));
+        out.push(new TextRun({ ...common, text: `[Image: ${textVal || "Photo"}]`, color: "888888", italics: true }));
         break;
       default:
         textParts.forEach((part, idx) => {
@@ -85,7 +108,12 @@ function runs(inline, st, opts = {}) {
 
 const ALIGN = { left: AlignmentType.LEFT, center: AlignmentType.CENTER, right: AlignmentType.RIGHT };
 
-export async function exportDocx(blocks, st, fileName, opts = {}) {
+export interface ExportDocxOptions {
+  hrPageBreak?: boolean;
+  [key: string]: any;
+}
+
+export async function exportDocx(blocks: any, st: any, fileName?: string, opts: ExportDocxOptions = {}) {
   const bodyFont = st.page.fontFamily.split(",")[0].replace(/['"]/g, "").trim();
   const bodySize = half(st.page.fontSize);
   const bodyColor = hex(st.page.textColor);
