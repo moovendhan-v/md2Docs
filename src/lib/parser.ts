@@ -160,11 +160,15 @@ export function parseMarkdown(md: string): MarkdownBlock[] {
     }
 
     // fenced code block
-    if (line.trim().startsWith("```")) {
-      const lang = line.trim().replace(/^```/, "").trim().toLowerCase();
+    const trimmedCodeLine = line.trim().replace(/^\\/, "");
+    if (trimmedCodeLine.startsWith("```")) {
+      const lang = trimmedCodeLine.replace(/^```/, "").trim().toLowerCase();
       const buf = [];
       i++;
-      while (i < lines.length && !lines[i].trim().startsWith("```")) { buf.push(lines[i]); i++; }
+      while (i < lines.length && !lines[i].trim().replace(/^\\/, "").startsWith("```")) {
+        buf.push(lines[i]);
+        i++;
+      }
       i++;
       if (lang === "mermaid") {
         blocks.push({ type: "mermaid", text: buf.join("\n") });

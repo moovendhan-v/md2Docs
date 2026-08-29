@@ -8,6 +8,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { getPageGeometry } from "./page";
 import { baseStyle } from "./renderHtml";
+import { renderMermaidDiagrams } from "./mermaid";
 
 // ── image helpers ──────────────────────────────────────────────────────────────
 
@@ -266,6 +267,7 @@ export async function renderPdf(pages, styles) {
       const contentDiv = document.createElement("div");
       contentDiv.style.cssText = baseStyle(styles) + "position:relative;z-index:2;";
       contentDiv.innerHTML = processedHtml;
+      await renderMermaidDiagrams(contentDiv);
       pageEl.appendChild(contentDiv);
 
       // Running Footer

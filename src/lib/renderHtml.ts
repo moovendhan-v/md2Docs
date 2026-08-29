@@ -294,7 +294,7 @@ export function blockToHtml(block, st, opts = {}, overrides = {}) {
         ? `<hr class="page-break"${eidAttr} style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`
         : `<hr${eidAttr} style="border:none;border-top:1px dashed ${st.table.borderColor};margin:14pt 0;" />`;
     case "mermaid":
-      return `<div class="mermaid-diagram"${eidAttr} data-mermaid="${esc(block.text)}" style="text-align:center;margin:12pt 0;min-height:80px;display:flex;justify-content:center;align-items:center;page-break-inside:avoid;"></div>`;
+      return `<div class="mermaid-diagram"${eidAttr} data-mermaid="${esc(block.text)}" style="text-align:center;margin:14pt 0;min-height:180px;display:flex;justify-content:center;align-items:center;page-break-inside:avoid;break-inside:avoid;"></div>`;
     case "code": {
       const size = codeFontSize(block.text, st.page.fontSize - 1);
       const radius = st.code.borderRadius !== undefined ? `${st.code.borderRadius}px` : "4px";

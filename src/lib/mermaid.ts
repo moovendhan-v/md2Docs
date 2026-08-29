@@ -8,9 +8,28 @@ export function initMermaid() {
   if (initialized) return;
   mermaid.initialize({
     startOnLoad: false,
-    theme: "default",
+    theme: "neutral",
+    themeVariables: {
+      fontFamily: "system-ui, -apple-system, sans-serif",
+      fontSize: "13px",
+      primaryColor: "#f0f7ff",
+      primaryTextColor: "#0f172a",
+      primaryBorderColor: "#38bdf8",
+      lineColor: "#64748b",
+      secondaryColor: "#f0fdf4",
+      tertiaryColor: "#faf5ff",
+      clusterBkg: "#f8fafc",
+      clusterBorder: "#cbd5e1",
+      mainBkg: "#ffffff",
+      nodeBorder: "#38bdf8",
+    },
+    flowchart: {
+      curve: "basis",
+      padding: 16,
+      useMaxWidth: true,
+      htmlLabels: true,
+    },
     securityLevel: "loose",
-    fontFamily: "inherit",
   });
   initialized = true;
 }

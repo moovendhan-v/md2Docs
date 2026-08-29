@@ -485,19 +485,20 @@ Validated expertise in designing resilient, secure, high-performing, and cost-op
 The diagram below illustrates the end-to-end multi-region microservices deployment architecture:
 
 \`\`\`mermaid
-graph TD
-    Client[🌐 Web & Mobile Clients] --> CloudFront[⚡ CloudFront CDN / Route 53]
-    CloudFront --> WAF[🛡️ AWS WAF Security]
-    WAF --> ALB[⚖️ Application Load Balancer]
-    ALB --> ECS1[🚀 ECS Fargate Cluster A]
-    ALB --> ECS2[🚀 ECS Fargate Cluster B]
-    ECS1 --> Cache[(⚡ Redis ElastiCache)]
-    ECS2 --> Cache
-    ECS1 --> Aurora[(🗄️ Amazon Aurora PostgreSQL Multi-AZ)]
-    ECS2 --> Aurora
-    ECS1 --> SQS[📬 Amazon SQS Event Queue]
-    SQS --> Lambda[⚡ AWS Lambda Worker]
-    Lambda --> S3[📦 Amazon S3 Secure Storage]
+graph LR
+    subgraph Ingress["🌐 Ingress & Security"]
+        Client[🌐 Clients] --> CF[⚡ CloudFront / WAF]
+        CF --> ALB[⚖️ App Load Balancer]
+    end
+    subgraph Compute["🚀 Microservices"]
+        ALB --> ECS[🚀 ECS Fargate Cluster]
+        ALB --> Lambda[⚡ Serverless Lambda]
+    end
+    subgraph Data["🗄️ Persistence & Storage"]
+        ECS --> Redis[(⚡ Redis Cache)]
+        ECS --> Aurora[(🗄️ Aurora DB)]
+        Lambda --> S3[📦 Amazon S3]
+    end
 \`\`\`
 
 ## System Reliability & Performance Formulas
