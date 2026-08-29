@@ -173,23 +173,18 @@ export async function renderPdf(pages, styles) {
     const borderInset = styles.page.borderInset || 8;
 
     for (let i = 0; i < pages.length; i++) {
-      const paddingBottom = showPageNumbers
-        ? `${Math.max(geom.marginY, 32)}px`
-        : `${geom.marginY}px`;
-
       const pageEl = document.createElement("div");
       pageEl.style.cssText =
         `width:${geom.width}px;height:${geom.height}px;` +
         `background:${styles.page.bg || "#ffffff"};` +
-        `padding:${geom.marginY}px ${geom.marginX}px;` +
-        `padding-bottom:${paddingBottom};` +
+        `padding:${geom.marginTop}px ${geom.marginRight}px ${geom.marginBottom}px ${geom.marginLeft}px;` +
         `box-sizing:border-box;overflow:hidden;position:relative;`;
 
       // Restricted page border box overlay
       if (borderStyle !== "none") {
         const borderOverlay = document.createElement("div");
         const bottomOffset = showPageNumbers
-          ? `${Math.max(geom.marginY - 8, borderInset + 16)}px`
+          ? `${Math.max(geom.marginBottom - 8, borderInset + 16)}px`
           : `${borderInset}px`;
         borderOverlay.style.cssText =
           `position:absolute;` +
@@ -210,12 +205,11 @@ export async function renderPdf(pages, styles) {
       // Page number footer
       if (showPageNumbers) {
         const footer = document.createElement("div");
-        const alignMap = { left: "flex-start", center: "center", right: "flex-end" };
+        const alignMap: any = { left: "flex-start", center: "center", right: "flex-end" };
         footer.style.cssText =
-          `position:absolute;bottom:0;left:0;right:0;height:${geom.marginY}px;` +
-          `display:flex;align-items:center;` +
-          `justify-content:${alignMap[pageNumAlign] || "center"};` +
-          `padding-left:${geom.marginX}px;padding-right:${geom.marginX}px;`;
+          `position:absolute;bottom:0;left:0;right:0;height:${geom.marginBottom}px;` +
+          `display:flex;align-items:center;justify-content:${alignMap[pageNumAlign] || "center"};` +
+          `padding-left:${geom.marginLeft}px;padding-right:${geom.marginRight}px;`;
         const span = document.createElement("span");
         span.style.cssText =
           `color:${pageNumColor};font-size:${pageNumSize}pt;` +
