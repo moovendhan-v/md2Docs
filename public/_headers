@@ -1,0 +1,6 @@
+# Cloudflare Pages / Workers static asset caching rules
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  Cache-Control: public, max-age=0, must-revalidate

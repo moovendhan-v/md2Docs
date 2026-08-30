@@ -1,70 +1,81 @@
-// esbuild.mjs — bundles the extension + shared frontend lib into dist/extension.js
+// esbuild.mjs — bundles both the extension backend and the React frontend webview
 import * as esbuild from "esbuild";
 import { argv } from "process";
 import * as fs from "fs";
 import * as path from "path";
+import { execSync } from "child_process";
 
 const watch = argv.includes("--watch");
+const rootDir = path.resolve("..");
 
-// Function to copy directory recursively
-function copyDirSync(src, dest) {
-  fs.mkdirSync(dest, { recursive: true });
-  let entries = fs.readdirSync(src, { withFileTypes: true });
+fs.mkdirSync(path.resolve("dist/client"), { recursive: true });
 
-  for (let entry of entries) {
-    let srcPath = path.join(src, entry.name);
-    let destPath = path.join(dest, entry.name);
-
-    if (entry.isDirectory()) {
-      copyDirSync(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
+// 1. Compile Tailwind CSS from the main app
+console.log("🎨 Compiling Tailwind CSS for extension webview...");
+try {
+  execSync("npx tailwindcss -i app/globals.css -o vscode-extension/dist/client/app.css -c tailwind.config.js --minify", {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+} catch (e) {
+  console.warn("Tailwind compilation note:", e.message);
 }
 
-// Copy built client assets into extension dist/client folder
-const clientSrc = path.resolve("../dist");
-const clientDest = path.resolve("dist/client");
+const sharedAliases = {
+  "@": path.resolve("../src"),
+  "@shared/parser": path.resolve("../src/lib/parser.ts"),
+  "@shared/renderHtml": path.resolve("../src/lib/renderHtml.ts"),
+  "@shared/templates": path.resolve("../src/lib/templates.ts"),
+};
 
-function copyClientAssets() {
-  if (fs.existsSync(clientSrc)) {
-    console.log(`Copying frontend client from ${clientSrc} to ${clientDest}...`);
-    fs.rmSync(clientDest, { recursive: true, force: true });
-    copyDirSync(clientSrc, clientDest);
-  } else {
-    console.warn(`Warning: Frontend client source folder not found at ${clientSrc}`);
-  }
-}
-
-copyClientAssets();
-
-const ctx = await esbuild.context({
+// 2. Extension backend bundle (Node.js)
+const extensionCtx = await esbuild.context({
   entryPoints: ["src/extension.js"],
   bundle: true,
   outfile: "dist/extension.js",
-  // VS Code extensions run in Node.js — mark vscode as external
   external: ["vscode"],
   format: "cjs",
   platform: "node",
   target: "node18",
   sourcemap: true,
   minify: false,
-  // Allow importing from ../src/lib/ (the shared frontend lib)
-  alias: {
-    "@shared/parser":     "../src/lib/parser.js",
-    "@shared/renderHtml": "../src/lib/renderHtml.js",
-    "@shared/templates":  "../src/lib/templates.js",
+  alias: sharedAliases,
+  logLevel: "info",
+});
+
+// 3. React Frontend Webview bundle (Browser)
+const webviewCtx = await esbuild.context({
+  entryPoints: ["src/webview/index.tsx"],
+  bundle: true,
+  outfile: "dist/client/app.js",
+  format: "iife",
+  platform: "browser",
+  target: ["es2020", "chrome100"],
+  sourcemap: false,
+  minify: false,
+  define: {
+    "process.env.NODE_ENV": '"production"',
+    "global": "window",
+  },
+  alias: sharedAliases,
+  loader: {
+    ".woff2": "dataurl",
+    ".woff": "dataurl",
+    ".ttf": "dataurl",
+    ".svg": "dataurl",
+    ".png": "dataurl",
   },
   logLevel: "info",
 });
 
 if (watch) {
-  await ctx.watch();
+  await extensionCtx.watch();
+  await webviewCtx.watch();
   console.log("Watching for changes…");
 } else {
-  await ctx.rebuild();
-  await ctx.dispose();
-  console.log("Build complete → dist/extension.js");
+  await extensionCtx.rebuild();
+  await webviewCtx.rebuild();
+  await extensionCtx.dispose();
+  await webviewCtx.dispose();
+  console.log("Build complete → dist/extension.js & dist/client/app.js");
 }
-

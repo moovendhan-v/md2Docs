@@ -1,12 +1,10 @@
 /* sidebarPanel.js
-   WebviewViewProvider that renders a live Markdown preview in the VS Code
-   sidebar with template switching, PDF preview, and Word/PDF export. */
+   WebviewViewProvider that renders the React frontend webview
+   inside the VS Code sidebar with live syncing, templates, and export. */
 
 import * as vscode from "vscode";
 import * as path from "path";
-import * as fs from "fs";
 import { parseMarkdown } from "@shared/parser";
-import { blocksToHtml, baseStyle } from "@shared/renderHtml";
 import { TEMPLATES } from "@shared/templates";
 import { exportDocxToFile } from "./exportDocxNode.js";
 
@@ -14,34 +12,38 @@ export class SidebarProvider {
   constructor(context) {
     this.context = context;
     this.view = undefined;
-    this._templateKey = Object.keys(TEMPLATES)[0];
+    this._templateKey = Object.keys(TEMPLATES)[0] || "boardroom";
     this._activeUri = undefined;
     this._disposables = [];
-    this._htmlLoaded = false;
   }
 
   resolveWebviewView(webviewView) {
     this.view = webviewView;
 
-    const distPath = path.join(this.context.extensionPath, 'dist', 'client');
+    const distPath = path.join(this.context.extensionPath, "dist", "client");
 
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.file(distPath)
+        vscode.Uri.file(distPath),
+        vscode.Uri.file(path.join(this.context.extensionPath, "dist")),
       ],
       retainContextWhenHidden: true,
     };
 
-    webviewView.webview.html = `<!DOCTYPE html><html><body><div style="padding: 20px; font-family: sans-serif; color: #888;">Opening preview...</div></body></html>`;
+    // Set webview HTML
+    this._setWebviewHtml(distPath);
 
-    // Handle messages from the webview (template change, export buttons)
+    // Handle messages from the React webview
     webviewView.webview.onDidReceiveMessage(
       async (msg) => {
         switch (msg.type) {
+          case "ready":
+          case "webviewReady":
+            this._sendMarkdownToWebview();
+            break;
           case "templateChange":
             this._templateKey = msg.key;
-            this._refresh();
             break;
           case "exportPdf":
             this._handleExportPdf(msg.styles, msg.options);
@@ -54,9 +56,6 @@ export class SidebarProvider {
             break;
           case "pdfError":
             vscode.window.showErrorMessage(`MD → Docs: PDF export failed — ${msg.message}`);
-            break;
-          case "printPdf":
-            // Webview asked to trigger VS Code PDF print
             break;
         }
       },
@@ -73,7 +72,7 @@ export class SidebarProvider {
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor && this._isMarkdown(editor.document.uri)) {
           this._activeUri = editor.document.uri;
-          this._refresh();
+          this._sendMarkdownToWebview();
         }
       })
     );
@@ -82,7 +81,7 @@ export class SidebarProvider {
     this._disposables.push(
       vscode.workspace.onDidChangeTextDocument((e) => {
         if (this._activeUri && e.document.uri.toString() === this._activeUri.toString()) {
-          this._refresh();
+          this._sendMarkdownToWebview();
         }
       })
     );
@@ -91,7 +90,7 @@ export class SidebarProvider {
     this._disposables.push(
       vscode.workspace.onDidSaveTextDocument((doc) => {
         if (this._activeUri && doc.uri.toString() === this._activeUri.toString()) {
-          this._refresh();
+          this._sendMarkdownToWebview();
         }
       })
     );
@@ -100,55 +99,78 @@ export class SidebarProvider {
     const editor = vscode.window.activeTextEditor;
     if (editor && this._isMarkdown(editor.document.uri)) {
       this._activeUri = editor.document.uri;
-      this._refresh();
     }
 
     this.context.subscriptions.push(...this._disposables);
   }
 
   _isMarkdown(uri) {
+    if (!uri || !uri.fsPath) return false;
     return uri.fsPath.endsWith(".md") || uri.fsPath.endsWith(".markdown");
   }
 
-  async _refresh() {
-    if (!this.view || !this._activeUri) return;
+  _setWebviewHtml(distPath) {
+    if (!this.view) return;
+
+    const appJsUri = this.view.webview.asWebviewUri(vscode.Uri.file(path.join(distPath, "app.js")));
+    const appCssUri = this.view.webview.asWebviewUri(vscode.Uri.file(path.join(distPath, "app.css")));
+    const cspSource = this.view.webview.cspSource;
+
+    this.view.webview.html = /* html */`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${cspSource} https: data: blob:; style-src ${cspSource} 'unsafe-inline' https:; script-src ${cspSource} 'unsafe-inline' 'unsafe-eval' https:; font-src ${cspSource} https: data:; connect-src ${cspSource} https: data: blob:;" />
+  <link rel="stylesheet" href="${appCssUri}" />
+  <title>MD to Docs</title>
+</head>
+<body class="antialiased bg-background text-foreground">
+  <div id="root"></div>
+  <script src="${appJsUri}"></script>
+</body>
+</html>`;
+
+    // Send markdown after React mounts
+    setTimeout(() => {
+      this._sendMarkdownToWebview();
+    }, 200);
+    setTimeout(() => {
+      this._sendMarkdownToWebview();
+    }, 800);
+  }
+
+  async _sendMarkdownToWebview() {
+    if (!this.view) return;
+
+    if (!this._activeUri) {
+      const editor = vscode.window.activeTextEditor;
+      if (editor && this._isMarkdown(editor.document.uri)) {
+        this._activeUri = editor.document.uri;
+      }
+    }
+
+    if (!this._activeUri) return;
 
     try {
-      const bytes = await vscode.workspace.fs.readFile(this._activeUri);
-      const md = new TextDecoder().decode(bytes);
+      let md = "";
+      const doc = vscode.workspace.textDocuments.find((d) => d.uri.toString() === this._activeUri.toString());
+      if (doc) {
+        md = doc.getText();
+      } else {
+        const bytes = await vscode.workspace.fs.readFile(this._activeUri);
+        md = new TextDecoder().decode(bytes);
+      }
+
       const fileName = path.basename(this._activeUri.fsPath, path.extname(this._activeUri.fsPath));
 
-      if (!this._htmlLoaded) {
-        const distPath = path.join(this.context.extensionPath, 'dist', 'client');
-        const indexPath = path.join(distPath, 'index.html');
-        let htmlContent = await fs.promises.readFile(indexPath, 'utf8');
-
-        // Rewrite assets links
-        htmlContent = htmlContent.replace(/(src|href)="\/assets\/([^"]+)"/g, (match, attr, assetName) => {
-          const fileUri = vscode.Uri.file(path.join(distPath, 'assets', assetName));
-          const webviewUri = this.view.webview.asWebviewUri(fileUri);
-          return `${attr}="${webviewUri}"`;
-        });
-
-        this.view.webview.html = htmlContent;
-        this._htmlLoaded = true;
-
-        setTimeout(() => {
-          this.view.webview.postMessage({
-            type: "updateMarkdown",
-            markdown: md,
-            fileName: fileName
-          });
-        }, 1200);
-      } else {
-        this.view.webview.postMessage({
-          type: "updateMarkdown",
-          markdown: md,
-          fileName: fileName
-        });
-      }
+      this.view.webview.postMessage({
+        type: "updateMarkdown",
+        markdown: md,
+        fileName: fileName,
+      });
     } catch (err) {
-      console.error("MD → Docs sidebar refresh error:", err);
+      console.error("MD → Docs error sending markdown:", err);
     }
   }
 
@@ -161,13 +183,13 @@ export class SidebarProvider {
     const defaultUri = vscode.Uri.file(this._activeUri.fsPath.replace(/\.(md|markdown)$/i, ".pdf"));
     const saveUri = await vscode.window.showSaveDialog({
       defaultUri,
-      filters: { 'PDF Document': ['pdf'] }
+      filters: { "PDF Document": ["pdf"] },
     });
     if (!saveUri) return;
 
-    const styles = customStyles || TEMPLATES[this._templateKey].styles;
-    const bg = styles.page.bg || "#ffffff";
-    const marginPreset = styles.page.margin || "normal";
+    const styles = customStyles || TEMPLATES[this._templateKey]?.styles || {};
+    const bg = styles.page?.bg || "#ffffff";
+    const marginPreset = styles.page?.margin || "normal";
     const options = customOptions || {};
 
     await vscode.window.withProgress(
@@ -181,7 +203,7 @@ export class SidebarProvider {
             bg: bg,
             marginPreset: marginPreset,
             showPageNumbers: options.showPageNumbers !== false,
-            showTOC: options.showTOC === true
+            showTOC: options.showTOC === true,
           });
 
           await new Promise((resolve) => {
@@ -224,11 +246,11 @@ export class SidebarProvider {
     const defaultUri = vscode.Uri.file(this._activeUri.fsPath.replace(/\.(md|markdown)$/i, ".docx"));
     const saveUri = await vscode.window.showSaveDialog({
       defaultUri,
-      filters: { 'Word Document': ['docx'] }
+      filters: { "Word Document": ["docx"] },
     });
     if (!saveUri) return;
 
-    const styles = customStyles || TEMPLATES[this._templateKey].styles;
+    const styles = customStyles || TEMPLATES[this._templateKey]?.styles || {};
     const options = customOptions || {};
     const outPath = saveUri.fsPath;
     let success = false;
@@ -238,14 +260,14 @@ export class SidebarProvider {
       async (progress) => {
         progress.report({ message: "Generating Word document…" });
         try {
-          const bytes = await vscode.workspace.fs.readFile(this._activeUri);
-          const md = new TextDecoder().decode(bytes);
+          const doc = vscode.workspace.textDocuments.find((d) => d.uri.toString() === this._activeUri.toString());
+          const md = doc ? doc.getText() : new TextDecoder().decode(await vscode.workspace.fs.readFile(this._activeUri));
           const blocks = parseMarkdown(md);
 
           await exportDocxToFile(blocks, styles, outPath, {
             hrPageBreak: options.hrPageBreak !== false,
             showPageNumbers: options.showPageNumbers !== false,
-            showTOC: options.showTOC === true
+            showTOC: options.showTOC === true,
           });
           success = true;
         } catch (err) {
