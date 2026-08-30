@@ -1,17 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
   reactStrictMode: true,
   typescript: {
     ignoreBuildErrors: true,
   },
-  async redirects() {
-    return [
-      {
-        source: '/dashboard',
-        destination: '/',
-        permanent: false,
-      },
-    ];
+  images: {
+    unoptimized: true,
   },
 };
 export default nextConfig;
